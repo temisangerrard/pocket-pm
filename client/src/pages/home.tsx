@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Sparkles, BarChart3, ArrowRight } from "lucide-react";
+import { FileText, Sparkles, ArrowRight } from "lucide-react";
 
 export default function Home() {
   return (
@@ -15,7 +15,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8 mb-8">
           <Card className="relative">
             <CardHeader className="space-y-2">
               <CardTitle className="flex items-center gap-2 text-xl">
@@ -55,35 +55,22 @@ export default function Home() {
             <CardContent>
               <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
                 Transform your PRD into a detailed product backlog using AI.
-                Generate, refine, and organize features automatically.
+                Generate, manage, and prioritize features with RICE scoring and MoSCoW method.
               </p>
-              <Link to="/backlog/generate" className="block">
-                <Button variant="outline" className="w-full group">
-                  Generate Backlog
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="space-y-2">
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6" />
-                Feature Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
-                Manage your product backlog using RICE scoring and MoSCoW method.
-                Get insights for your roadmap planning.
-              </p>
-              <Link to="/features" className="block">
-                <Button variant="outline" className="w-full group">
-                  View Backlog
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
+              <div className="space-y-2">
+                <Link to="/backlog/generate" className="block">
+                  <Button className="w-full group">
+                    Generate Backlog
+                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <Link to="/features" className="block">
+                  <Button variant="outline" className="w-full group">
+                    View Backlog
+                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         </div>
