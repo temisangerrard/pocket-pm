@@ -28,12 +28,20 @@ export default function Home() {
                 Create, edit, and manage comprehensive Product Requirements Documents.
                 Keep all product decisions in one place.
               </p>
-              <Link to="/prd/create" className="block">
-                <Button className="w-full group h-12 sm:h-10">
-                  Create New PRD 
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
+              <div className="space-y-2">
+                <Link to="/prd/create" className="block">
+                  <Button className="w-full group">
+                    Create New PRD 
+                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <Link to="/prds" className="block">
+                  <Button variant="outline" className="w-full group">
+                    View All PRDs
+                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
 
@@ -50,7 +58,7 @@ export default function Home() {
                 Generate, refine, and organize features automatically.
               </p>
               <Link to="/backlog/generate" className="block">
-                <Button variant="outline" className="w-full group h-12 sm:h-10">
+                <Button variant="outline" className="w-full group">
                   Generate Backlog
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
@@ -71,7 +79,7 @@ export default function Home() {
                 Get data-driven insights for your roadmap.
               </p>
               <Link to="/features" className="block">
-                <Button variant="outline" className="w-full group h-12 sm:h-10">
+                <Button variant="outline" className="w-full group">
                   Prioritize Features
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
