@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import FeatureList from "@/pages/feature-list";
 import PrdCreate from "@/pages/prd-create";
+import PrdTemplates from "@/pages/prd-templates";
 
 function Router() {
   return (
@@ -13,6 +14,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/features" component={FeatureList} />
       <Route path="/prd/create" component={PrdCreate} />
+      <Route path="/prd/templates" component={PrdTemplates} />
       <Route component={NotFound} />
     </Switch>
   );
