@@ -54,14 +54,14 @@ export default function PrdCreate() {
     onSuccess: (data) => {
       setSections(data.sections);
       toast({
-        title: "PRD Template Generated",
-        description: "Your template is ready for review and customization.",
+        title: "PRD Generated",
+        description: "Your PRD is ready for review and customization.",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Error Generating Template",
-        description: error.message || "Failed to generate PRD template. Please try again.",
+        title: "Error Generating PRD",
+        description: error.message || "Failed to generate PRD. Please try again.",
         variant: "destructive",
       });
     },
@@ -69,20 +69,20 @@ export default function PrdCreate() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/prd/templates", {
+      await apiRequest("POST", "/api/prds", {
         name: form.getValues().description.slice(0, 50),
         description: form.getValues().description,
         sections,
       });
     },
     onSuccess: () => {
-      toast({ title: "PRD Template Saved" });
-      setLocation("/prd/templates");
+      toast({ title: "PRD Saved" });
+      setLocation("/prds");
     },
     onError: (error: Error) => {
       toast({
-        title: "Error Saving Template",
-        description: error.message || "Failed to save the template. Please try again.",
+        title: "Error Saving PRD",
+        description: error.message || "Failed to save the PRD. Please try again.",
         variant: "destructive",
       });
     },

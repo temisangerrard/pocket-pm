@@ -14,7 +14,7 @@ export const features = pgTable("features", {
   order: integer("order").notNull(),
 });
 
-export const prdTemplates = pgTable("prd_templates", {
+export const prds = pgTable("prds", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull(),
@@ -32,7 +32,7 @@ export const insertFeatureSchema = createInsertSchema(features)
     effort: z.number().min(1).max(10),
   });
 
-export const insertPrdTemplateSchema = createInsertSchema(prdTemplates)
+export const insertPrdSchema = createInsertSchema(prds)
   .omit({ id: true, createdAt: true, updatedAt: true })
   .extend({
     sections: z.array(z.object({
@@ -44,5 +44,5 @@ export const insertPrdTemplateSchema = createInsertSchema(prdTemplates)
 
 export type InsertFeature = z.infer<typeof insertFeatureSchema>;
 export type Feature = typeof features.$inferSelect;
-export type InsertPrdTemplate = z.infer<typeof insertPrdTemplateSchema>;
-export type PrdTemplate = typeof prdTemplates.$inferSelect;
+export type InsertPrd = z.infer<typeof insertPrdSchema>;
+export type Prd = typeof prds.$inferSelect;

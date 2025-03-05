@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertFeatureSchema, insertPrdTemplateSchema } from "@shared/schema";
+import { insertFeatureSchema, insertPrdSchema } from "@shared/schema";
 import { generatePrdTemplate } from "./utils/openai";
 
 export async function registerRoutes(app: Express) {
@@ -43,7 +43,7 @@ export async function registerRoutes(app: Express) {
     res.status(204).send();
   });
 
-  // New PRD template routes
+  // PRD routes
   app.post("/api/prd/generate", async (req, res) => {
     try {
       const { description, industry } = req.body;
@@ -59,19 +59,19 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/prd/templates", async (req, res) => {
-    const result = insertPrdTemplateSchema.safeParse(req.body);
+  app.post("/api/prds", async (req, res) => {
+    const result = insertPrdSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: result.error });
     }
 
-    const template = await storage.createPrdTemplate(result.data);
-    res.json(template);
+    const prd = await storage.createPrd(result.data);
+    res.json(prd);
   });
 
-  app.get("/api/prd/templates", async (_req, res) => {
-    const templates = await storage.getPrdTemplates();
-    res.json(templates);
+  app.get("/api/prds", async (_req, res) => {
+    const prds = await storage.getPrds();
+    res.json(prds);
   });
 
   return createServer(app);

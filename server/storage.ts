@@ -1,5 +1,5 @@
 import { features, type Feature, type InsertFeature } from "@shared/schema";
-import { prdTemplates, type PrdTemplate, type InsertPrdTemplate } from "@shared/schema";
+import { prds, type Prd, type InsertPrd } from "@shared/schema";
 
 export interface IStorage {
   // Feature methods
@@ -9,23 +9,23 @@ export interface IStorage {
   updateFeatureOrder(id: number, order: number): Promise<Feature>;
   deleteFeature(id: number): Promise<void>;
 
-  // PRD Template methods
-  getPrdTemplates(): Promise<PrdTemplate[]>;
-  getPrdTemplate(id: number): Promise<PrdTemplate | undefined>;
-  createPrdTemplate(template: InsertPrdTemplate): Promise<PrdTemplate>;
+  // PRD methods
+  getPrds(): Promise<Prd[]>;
+  getPrd(id: number): Promise<Prd | undefined>;
+  createPrd(prd: InsertPrd): Promise<Prd>;
 }
 
 export class MemStorage implements IStorage {
   private features: Map<number, Feature>;
-  private prdTemplates: Map<number, PrdTemplate>;
+  private prds: Map<number, Prd>;
   private currentFeatureId: number;
-  private currentTemplateId: number;
+  private currentPrdId: number;
 
   constructor() {
     this.features = new Map();
-    this.prdTemplates = new Map();
+    this.prds = new Map();
     this.currentFeatureId = 1;
-    this.currentTemplateId = 1;
+    this.currentPrdId = 1;
   }
 
   // Existing Feature methods
@@ -70,28 +70,28 @@ export class MemStorage implements IStorage {
     this.features.delete(id);
   }
 
-  // New PRD Template methods
-  async getPrdTemplates(): Promise<PrdTemplate[]> {
-    return Array.from(this.prdTemplates.values());
+  // PRD methods
+  async getPrds(): Promise<Prd[]> {
+    return Array.from(this.prds.values());
   }
 
-  async getPrdTemplate(id: number): Promise<PrdTemplate | undefined> {
-    return this.prdTemplates.get(id);
+  async getPrd(id: number): Promise<Prd | undefined> {
+    return this.prds.get(id);
   }
 
-  async createPrdTemplate(template: InsertPrdTemplate): Promise<PrdTemplate> {
-    const id = this.currentTemplateId++;
+  async createPrd(prd: InsertPrd): Promise<Prd> {
+    const id = this.currentPrdId++;
     const now = new Date();
 
-    const prdTemplate: PrdTemplate = {
-      ...template,
+    const newPrd: Prd = {
+      ...prd,
       id,
       createdAt: now,
       updatedAt: now,
     };
 
-    this.prdTemplates.set(id, prdTemplate);
-    return prdTemplate;
+    this.prds.set(id, newPrd);
+    return newPrd;
   }
 }
 
