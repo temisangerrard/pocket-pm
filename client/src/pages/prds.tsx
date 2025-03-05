@@ -4,7 +4,7 @@ import { Prd } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarIcon, FilePlus } from "lucide-react";
+import { CalendarIcon, FilePlus, ListChecks } from "lucide-react";
 import { format } from "date-fns";
 
 export default function Prds() {
@@ -38,9 +38,17 @@ export default function Prds() {
               <p className="text-sm text-muted-foreground mb-4">
                 {prd.description}
               </p>
-              <div className="flex items-center text-sm text-muted-foreground">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                Created {format(new Date(prd.createdAt), 'PPP')}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  Created {format(new Date(prd.createdAt), 'PPP')}
+                </div>
+                <Link to={`/backlog/generate?prdId=${prd.id}`}>
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    <ListChecks className="mr-2 h-4 w-4" />
+                    Generate Backlog
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

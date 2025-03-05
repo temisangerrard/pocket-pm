@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Prd } from "@shared/schema";
@@ -23,7 +23,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 
 export default function BacklogGenerate() {
-  const [selectedPrdId, setSelectedPrdId] = useState<string>("");
+  // Get PRD ID from URL query parameters
+  const searchParams = new URLSearchParams(window.location.search);
+  const urlPrdId = searchParams.get('prdId');
+
+  const [selectedPrdId, setSelectedPrdId] = useState<string>(urlPrdId || "");
   const [customDescription, setCustomDescription] = useState("");
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
@@ -54,6 +58,12 @@ export default function BacklogGenerate() {
       });
     },
   });
+
+  useEffect(() => {
+    if (selectedPrdId) {
+      generateMutation.mutate({ prdId: parseInt(selectedPrdId) });
+    }
+  }, []); // Run once on mount to auto-generate if PRD ID is in URL
 
   return (
     <div className="container mx-auto px-4 py-8">

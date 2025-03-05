@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, ListChecks } from "lucide-react";
 
 const formSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
@@ -35,6 +35,7 @@ type Section = {
 
 export default function PrdCreate() {
   const [sections, setSections] = useState<Section[]>([]);
+  const [savedPrdId, setSavedPrdId] = useState<number | null>(null);
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
 
@@ -69,15 +70,16 @@ export default function PrdCreate() {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/prds", {
+      const res = await apiRequest("POST", "/api/prds", {
         name: form.getValues().description.slice(0, 50),
         description: form.getValues().description,
         sections,
       });
+      return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({ title: "PRD Saved" });
-      setLocation("/prds");
+      setSavedPrdId(data.id);
     },
     onError: (error: Error) => {
       toast({
@@ -89,7 +91,7 @@ export default function PrdCreate() {
   });
 
   const handleSectionEdit = (index: number, field: keyof Section, value: string) => {
-    setSections(current => {
+    setSections((current) => {
       const updated = [...current];
       updated[index] = { ...updated[index], [field]: value };
       return updated;
@@ -107,7 +109,10 @@ export default function PrdCreate() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit((data) => generateMutation.mutate(data))} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit((data) => generateMutation.mutate(data))}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="description"
@@ -169,27 +174,42 @@ export default function PrdCreate() {
                   <div key={index} className="space-y-2">
                     <Input
                       value={section.title}
-                      onChange={(e) => handleSectionEdit(index, 'title', e.target.value)}
+                      onChange={(e) =>
+                        handleSectionEdit(index, "title", e.target.value)
+                      }
                       className="font-semibold text-lg"
                     />
                     <Textarea
                       value={section.content}
-                      onChange={(e) => handleSectionEdit(index, 'content', e.target.value)}
+                      onChange={(e) =>
+                        handleSectionEdit(index, "content", e.target.value)
+                      }
                       className="min-h-[100px]"
                     />
                   </div>
                 ))}
 
-                <Button
-                  onClick={() => saveMutation.mutate()}
-                  className="w-full"
-                  disabled={saveMutation.isPending}
-                >
-                  {saveMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button
+                    onClick={() => saveMutation.mutate()}
+                    className="w-full sm:flex-1"
+                    disabled={saveMutation.isPending}
+                  >
+                    {saveMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Save PRD
+                  </Button>
+
+                  {savedPrdId && (
+                    <Link href={`/backlog/generate?prdId=${savedPrdId}`} className="w-full sm:flex-1">
+                      <Button variant="outline" className="w-full">
+                        <ListChecks className="mr-2 h-4 w-4" />
+                        Generate Backlog
+                      </Button>
+                    </Link>
                   )}
-                  Save Template
-                </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
