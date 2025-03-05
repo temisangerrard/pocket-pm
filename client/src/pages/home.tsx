@@ -8,10 +8,9 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-6 sm:py-12">
         <div className="max-w-3xl mx-auto text-center mb-8 sm:mb-12">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4">Product Management Suite</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4">Pocket PM</h1>
           <p className="text-lg sm:text-xl text-muted-foreground mb-6 sm:mb-8 px-2">
-            Create and manage Product Requirements Documents (PRDs), automatically generate
-            product backlogs, and prioritize features using proven frameworks.
+            Your pocket product manager. Create PRDs, generate backlogs, and prioritize features with AI assistance.
           </p>
         </div>
 
@@ -77,12 +76,12 @@ export default function Home() {
 
         <div className="mt-8 sm:mt-16 max-w-2xl mx-auto text-center px-2">
           <h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4">
-            Your Complete Product Management Workflow
+            Your Pocket Product Manager
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground">
             Start with a PRD, use AI to generate your backlog, and prioritize features
-            using proven frameworks. Everything you need to build successful products,
-            all in one place.
+            using proven frameworks. Everything you need for product management,
+            right in your pocket.
           </p>
         </div>
       </div>

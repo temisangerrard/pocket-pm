@@ -8,7 +8,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           <Link href="/">
-            <a className="text-xl font-bold">Product Suite</a>
+            <a className="text-xl font-bold">Pocket PM</a>
           </Link>
           <Link href="/profile">
             <Button variant="ghost" size="icon">
