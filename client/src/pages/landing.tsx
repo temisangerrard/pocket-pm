@@ -42,7 +42,7 @@ export default function Landing() {
                 Your AI-Powered Product Management Assistant
               </h1>
               <p className="text-xl text-muted-foreground mb-8">
-                Create PRDs, generate backlogs, and prioritize features with the help of AI.
+                Create PRDs, generate backlogs, and prioritize features with AI assistance.
                 Streamline your product development process with Pocket PM.
               </p>
               <Button size="lg" onClick={() => setShowAuth(true)}>
