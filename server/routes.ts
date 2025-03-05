@@ -3,6 +3,7 @@ import { createServer } from "http";
 import { storage } from "./storage";
 import { insertFeatureSchema, insertPrdSchema } from "@shared/schema";
 import { generatePrdTemplate } from "./utils/openai";
+import { generateBacklogItems } from "./utils/backlog";
 
 export async function registerRoutes(app: Express) {
   // Existing feature routes
@@ -72,6 +73,39 @@ export async function registerRoutes(app: Express) {
   app.get("/api/prds", async (_req, res) => {
     const prds = await storage.getPrds();
     res.json(prds);
+  });
+
+  // New backlog generation endpoint
+  app.post("/api/backlog/generate", async (req, res) => {
+    try {
+      const { prdId, description } = req.body;
+
+      if (!prdId && !description) {
+        return res.status(400).json({ error: "Either PRD ID or description is required" });
+      }
+
+      let input = description;
+      if (prdId) {
+        const prd = await storage.getPrd(prdId);
+        if (!prd) {
+          return res.status(404).json({ error: "PRD not found" });
+        }
+        // Combine PRD sections into a single description
+        input = `${prd.description}\n\n${prd.sections.map(s => `${s.title}:\n${s.content}`).join('\n\n')}`;
+      }
+
+      const features = await generateBacklogItems(input);
+
+      // Save generated features
+      for (const feature of features) {
+        await storage.createFeature(feature);
+      }
+
+      res.json({ message: "Backlog items generated successfully" });
+    } catch (error: any) {
+      console.error('Error in backlog generation:', error);
+      res.status(500).json({ error: "Failed to generate backlog items" });
+    }
   });
 
   return createServer(app);
