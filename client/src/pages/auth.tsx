@@ -17,6 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Mail, AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -38,6 +39,7 @@ export default function AuthPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, error, login, register } = useAuth();
   const [_, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -75,9 +77,22 @@ export default function AuthPage() {
       }
     } catch (err) {
       // Error is handled by the mutations
+      console.error("Auth error:", err);
+      toast({
+        title: "Authentication Error",
+        description: err instanceof Error ? err.message : "An error occurred during authentication",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleForgotPassword = () => {
+    toast({
+      title: "Reset Password",
+      description: "Please contact support to reset your password.",
+    });
   };
 
   const currentForm = isRegistering ? registerForm : loginForm;
@@ -168,6 +183,17 @@ export default function AuthPage() {
                   </FormItem>
                 )}
               />
+
+              {!isRegistering && (
+                <Button
+                  type="button"
+                  variant="link"
+                  className="px-0 font-normal text-sm"
+                  onClick={handleForgotPassword}
+                >
+                  Forgot your password?
+                </Button>
+              )}
 
               <Button 
                 type="submit" 
