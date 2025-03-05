@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SiGoogle } from "react-icons/si";
+import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
@@ -26,13 +27,15 @@ export default function AuthPage() {
         await signInWithEmail(email, password);
       }
       setLocation("/");
+    } catch (error) {
+      // Error is handled in the auth hook
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-sm p-6">
         <h1 className="text-2xl font-bold mb-6">
           {isSignUp ? "Create Account" : "Sign In"}
@@ -40,7 +43,7 @@ export default function AuthPage() {
 
         <Button
           variant="outline"
-          onClick={signInWithGoogle}
+          onClick={() => signInWithGoogle().then(() => setLocation("/"))}
           className="w-full mb-6"
           disabled={loading}
         >
@@ -66,6 +69,7 @@ export default function AuthPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
+            required
           />
           <Input
             type="password"
@@ -73,8 +77,10 @@ export default function AuthPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
+            required
           />
           <Button type="submit" className="w-full" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSignUp ? "Create Account" : "Sign In"}
           </Button>
         </form>
