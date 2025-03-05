@@ -18,14 +18,20 @@ import { z } from "zod";
 import { Mail, AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-const authSchema = z.object({
+const loginSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
-  email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  name: z.string().min(2, "Name must be at least 2 characters").optional(),
 });
 
-type AuthFormValues = z.infer<typeof authSchema>;
+const registerSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -33,13 +39,21 @@ export default function AuthPage() {
   const { user, error, login, register } = useAuth();
   const [_, setLocation] = useLocation();
 
-  const form = useForm<AuthFormValues>({
-    resolver: zodResolver(authSchema),
+  const loginForm = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       username: "",
+      password: "",
+    },
+  });
+
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      username: "",
+      name: "",
       email: "",
       password: "",
-      name: "",
     },
   });
 
@@ -49,13 +63,15 @@ export default function AuthPage() {
     return null;
   }
 
-  const onSubmit = async (data: AuthFormValues) => {
+  const onSubmit = async (data: LoginFormValues | RegisterFormValues) => {
     setIsSubmitting(true);
     try {
       if (isRegistering) {
-        await register(data.username, data.password, data.name || "", data.email);
+        const regData = data as RegisterFormValues;
+        await register(regData.username, regData.password, regData.name, regData.email);
       } else {
-        await login(data.username, data.password);
+        const loginData = data as LoginFormValues;
+        await login(loginData.username, loginData.password);
       }
     } catch (err) {
       // Error is handled by the mutations
@@ -63,6 +79,8 @@ export default function AuthPage() {
       setIsSubmitting(false);
     }
   };
+
+  const currentForm = isRegistering ? registerForm : loginForm;
 
   return (
     <div className="min-h-screen grid md:grid-cols-2">
@@ -89,10 +107,10 @@ export default function AuthPage() {
             </Alert>
           )}
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <Form {...currentForm}>
+            <form onSubmit={currentForm.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
-                control={form.control}
+                control={currentForm.control}
                 name="username"
                 render={({ field }) => (
                   <FormItem>
@@ -108,7 +126,7 @@ export default function AuthPage() {
               {isRegistering && (
                 <>
                   <FormField
-                    control={form.control}
+                    control={currentForm.control}
                     name="name"
                     render={({ field }) => (
                       <FormItem>
@@ -122,7 +140,7 @@ export default function AuthPage() {
                   />
 
                   <FormField
-                    control={form.control}
+                    control={currentForm.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
@@ -138,7 +156,7 @@ export default function AuthPage() {
               )}
 
               <FormField
-                control={form.control}
+                control={currentForm.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
