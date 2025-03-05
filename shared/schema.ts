@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, numeric, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -14,6 +14,15 @@ export const features = pgTable("features", {
   order: integer("order").notNull(),
 });
 
+export const prdTemplates = pgTable("prd_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  sections: json("sections").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertFeatureSchema = createInsertSchema(features)
   .omit({ id: true, score: true, order: true })
   .extend({
@@ -23,5 +32,17 @@ export const insertFeatureSchema = createInsertSchema(features)
     effort: z.number().min(1).max(10),
   });
 
+export const insertPrdTemplateSchema = createInsertSchema(prdTemplates)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    sections: z.array(z.object({
+      title: z.string(),
+      content: z.string(),
+      order: z.number(),
+    })),
+  });
+
 export type InsertFeature = z.infer<typeof insertFeatureSchema>;
 export type Feature = typeof features.$inferSelect;
+export type InsertPrdTemplate = z.infer<typeof insertPrdTemplateSchema>;
+export type PrdTemplate = typeof prdTemplates.$inferSelect;
