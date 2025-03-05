@@ -27,8 +27,14 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+type Section = {
+  title: string;
+  content: string;
+  order: number;
+};
+
 export default function PrdCreate() {
-  const [sections, setSections] = useState<Array<{ title: string; content: string; order: number }>>([]);
+  const [sections, setSections] = useState<Section[]>([]);
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
 
@@ -81,6 +87,14 @@ export default function PrdCreate() {
       });
     },
   });
+
+  const handleSectionEdit = (index: number, field: keyof Section, value: string) => {
+    setSections(current => {
+      const updated = [...current];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -153,10 +167,16 @@ export default function PrdCreate() {
               <CardContent className="space-y-6">
                 {sections.map((section, index) => (
                   <div key={index} className="space-y-2">
-                    <h3 className="text-lg font-semibold">{section.title}</h3>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {section.content}
-                    </p>
+                    <Input
+                      value={section.title}
+                      onChange={(e) => handleSectionEdit(index, 'title', e.target.value)}
+                      className="font-semibold text-lg"
+                    />
+                    <Textarea
+                      value={section.content}
+                      onChange={(e) => handleSectionEdit(index, 'content', e.target.value)}
+                      className="min-h-[100px]"
+                    />
                   </div>
                 ))}
 
