@@ -70,17 +70,17 @@ export default function Home() {
             <CardHeader className="space-y-2">
               <CardTitle className="flex items-center gap-2 text-xl">
                 <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6" />
-                Feature Prioritization
+                Feature Management
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
-                Prioritize features using RICE scoring and MoSCoW method.
-                Get data-driven insights for your roadmap.
+                Manage your product backlog using RICE scoring and MoSCoW method.
+                Get insights for your roadmap planning.
               </p>
               <Link to="/features" className="block">
                 <Button variant="outline" className="w-full group">
-                  Prioritize Features
+                  View Backlog
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
