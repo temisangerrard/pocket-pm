@@ -6,6 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
   signOut,
   onAuthStateChanged,
   type User as FirebaseUser
@@ -18,6 +21,8 @@ type AuthContextType = {
   isLoading: boolean;
   error: Error | null;
   signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -52,6 +57,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     enabled: !!firebaseUser,
   });
 
+  const handleAuthError = (error: any) => {
+    let message = "Authentication failed";
+    if (error.code === 'auth/popup-closed-by-user') {
+      message = "Sign-in window was closed";
+    } else if (error.code === 'auth/popup-blocked') {
+      message = "Sign-in popup was blocked. Please allow popups for this site.";
+    } else if (error.code === 'auth/email-already-in-use') {
+      message = "Email already in use. Please sign in instead.";
+    } else if (error.code === 'auth/invalid-email') {
+      message = "Invalid email address";
+    } else if (error.code === 'auth/wrong-password') {
+      message = "Incorrect password";
+    } else if (error.code === 'auth/user-not-found') {
+      message = "No account found with this email";
+    }
+
+    toast({
+      title: "Authentication Error",
+      description: message,
+      variant: "destructive",
+    });
+  };
+
   const signInWithGoogle = async () => {
     if (!isInitialized) {
       toast({
@@ -67,11 +95,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signInWithPopup(auth, provider);
       toast({ title: "Successfully signed in with Google" });
     } catch (error: any) {
-      toast({
-        title: "Sign-in failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      handleAuthError(error);
+    }
+  };
+
+  const signInWithEmail = async (email: string, password: string) => {
+    if (!isInitialized) return;
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({ title: "Successfully signed in" });
+    } catch (error: any) {
+      handleAuthError(error);
+    }
+  };
+
+  const signUpWithEmail = async (email: string, password: string, name: string) => {
+    if (!isInitialized) return;
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName: name });
+      toast({ title: "Account created successfully" });
+    } catch (error: any) {
+      handleAuthError(error);
     }
   };
 
@@ -99,6 +146,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: isLoading || !isInitialized,
         error: null,
         signInWithGoogle,
+        signInWithEmail,
+        signUpWithEmail,
         logout,
       }}
     >
