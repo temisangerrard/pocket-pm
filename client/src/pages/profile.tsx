@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { User } from "@shared/schema";
@@ -7,7 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ArrowLeft, Mail, Calendar, Briefcase, Pencil, X, Check } from "lucide-react";
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -28,7 +28,17 @@ const ROLES = {
   designer: "Designer",
   qa_engineer: "QA Engineer",
   business_analyst: "Business Analyst",
-  stakeholder: "Stakeholder"
+  stakeholder: "Stakeholder",
+  project_manager: "Project Manager",
+  ux_researcher: "UX Researcher",
+  data_analyst: "Data Analyst",
+  marketing_specialist: "Marketing Specialist",
+  sales_representative: "Sales Representative",
+  customer_success: "Customer Success",
+  operations_manager: "Operations Manager",
+  executive: "Executive",
+  consultant: "Consultant",
+  other: "Other"
 } as const;
 
 export default function Profile() {
@@ -77,6 +87,14 @@ export default function Profile() {
   };
 
   const handleSave = () => {
+    if (!editedName.trim()) {
+      toast({
+        title: "Name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
     updateMutation.mutate({
       name: editedName,
       role: editedRole,
@@ -129,14 +147,18 @@ export default function Profile() {
                     value={editedName}
                     onChange={(e) => setEditedName(e.target.value)}
                     className="text-2xl font-bold"
+                    placeholder="Enter your name"
                   />
                 ) : (
                   <CardTitle className="text-2xl">{user?.name}</CardTitle>
                 )}
                 <Badge variant="outline" className="mt-2">
                   {isEditing ? (
-                    <Select value={editedRole} onValueChange={(value: keyof typeof ROLES) => setEditedRole(value)}>
-                      <SelectTrigger className="w-[180px]">
+                    <Select 
+                      value={editedRole} 
+                      onValueChange={(value: keyof typeof ROLES) => setEditedRole(value)}
+                    >
+                      <SelectTrigger className="w-[200px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>

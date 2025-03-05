@@ -44,7 +44,17 @@ export const insertUserSchema = createInsertSchema(users)
       'designer',
       'qa_engineer',
       'business_analyst',
-      'stakeholder'
+      'stakeholder',
+      'project_manager',
+      'ux_researcher',
+      'data_analyst',
+      'marketing_specialist',
+      'sales_representative',
+      'customer_success',
+      'operations_manager',
+      'executive',
+      'consultant',
+      'other'
     ]).default('product_manager'),
   });
 

@@ -22,17 +22,29 @@ export async function registerRoutes(app: Express) {
   app.patch("/api/user/profile", async (req, res) => {
     try {
       const { name, role } = req.body;
+
+      // Validate the input using our schema
+      const validationResult = insertUserSchema.safeParse({ name, role, email: "demo@example.com" });
+
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid input",
+          details: validationResult.error.errors 
+        });
+      }
+
       // In a real app, this would update the user in the database
       // For now, just return the updated mock user
       res.json({
         id: 1,
-        name: name || "Demo User",
+        name,
         email: "demo@example.com",
-        role: role || "product_manager",
+        role,
         createdAt: new Date().toISOString(),
       });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      console.error('Error updating profile:', error);
+      res.status(500).json({ error: "Failed to update profile" });
     }
   });
 
