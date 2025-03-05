@@ -18,13 +18,38 @@ export async function generatePrdTemplate(
   productDescription: string,
   industry?: string
 ): Promise<PrdSection[]> {
-  const prompt = `Create a detailed PRD template for the following product description:
-${productDescription}
-${industry ? `Industry context: ${industry}` : ''}
+  const prompt = `Create a detailed PRD template for the following product:
 
-Generate a structured PRD with sections. Include modern product management best practices.
-Format the response as a JSON array of sections, each with title, content (with placeholder content), and order fields.
-Keep the content concise but meaningful.`;
+Product Description: ${productDescription}
+${industry ? `Industry Context: ${industry}` : ''}
+
+Generate a structured PRD with the following sections:
+1. Executive Summary
+2. Problem Statement
+3. Market Analysis
+4. Product Goals and Objectives
+5. Key Features and Functionality
+6. User Stories and Requirements
+7. Technical Requirements
+8. Success Metrics
+
+For each section, provide meaningful placeholder content that product managers can customize.
+
+Format your response as a JSON object with a 'sections' array, where each section has:
+- title: The section name
+- content: Detailed placeholder content
+- order: Numerical order starting from 0
+
+Example format:
+{
+  "sections": [
+    {
+      "title": "Executive Summary",
+      "content": "Brief overview of the product...",
+      "order": 0
+    }
+  ]
+}`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -32,13 +57,14 @@ Keep the content concise but meaningful.`;
       messages: [
         {
           role: "system",
-          content: "You are a product management expert that creates detailed PRD templates."
+          content: "You are a product management expert that creates structured, detailed PRD templates. Always respond with valid JSON that matches the specified format."
         },
         {
           role: "user",
           content: prompt
         }
       ],
+      temperature: 0.7,
       response_format: { type: "json_object" }
     });
 
