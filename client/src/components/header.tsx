@@ -17,7 +17,9 @@ export default function Header() {
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           <Link href="/">
-            <span className="text-xl font-bold cursor-pointer">Pocket PM</span>
+            <Button variant="link" className="text-xl font-bold p-0 h-auto">
+              Pocket PM
+            </Button>
           </Link>
           {user && (
             <DropdownMenu>
