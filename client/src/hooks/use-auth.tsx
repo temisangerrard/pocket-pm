@@ -8,8 +8,8 @@ type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string, name: string, email: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -18,14 +18,12 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
-  // Get user data
   const { data: user, error, isLoading } = useQuery<User | null>({
     queryKey: ["/api/user"],
   });
 
-  // Login mutation
   const loginMutation = useMutation({
-    mutationFn: async (credentials: { email: string; password: string }) => {
+    mutationFn: async (credentials: { username: string; password: string }) => {
       const response = await apiRequest("POST", "/api/login", credentials);
       return response.json();
     },
@@ -42,9 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Register mutation
   const registerMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string; name: string }) => {
+    mutationFn: async (data: { username: string; password: string; name: string; email: string }) => {
       const response = await apiRequest("POST", "/api/register", data);
       return response.json();
     },
@@ -61,7 +58,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  // Logout mutation
   const logoutMutation = useMutation({
     mutationFn: async () => {
       await apiRequest("POST", "/api/logout");
@@ -79,12 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const login = async (email: string, password: string) => {
-    await loginMutation.mutateAsync({ email, password });
+  const login = async (username: string, password: string) => {
+    await loginMutation.mutateAsync({ username, password });
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    await registerMutation.mutateAsync({ email, password, name });
+  const register = async (username: string, password: string, name: string, email: string) => {
+    await registerMutation.mutateAsync({ username, password, name, email });
   };
 
   const logout = async () => {
