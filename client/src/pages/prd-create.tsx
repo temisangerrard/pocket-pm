@@ -52,10 +52,10 @@ export default function PrdCreate() {
         description: "Your template is ready for review and customization.",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error Generating Template",
-        description: "Failed to generate PRD template. Please try again.",
+        description: error.message || "Failed to generate PRD template. Please try again.",
         variant: "destructive",
       });
     },
@@ -72,6 +72,13 @@ export default function PrdCreate() {
     onSuccess: () => {
       toast({ title: "PRD Template Saved" });
       setLocation("/prd/templates");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error Saving Template",
+        description: error.message || "Failed to save the template. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
