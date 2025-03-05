@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertFeatureSchema, insertPrdSchema } from "@shared/schema";
+import { insertFeatureSchema, insertPrdSchema, insertUserSchema } from "@shared/schema";
 import { generatePrdTemplate } from "./utils/openai";
 import { generateBacklogItems } from "./utils/backlog";
 
@@ -17,6 +17,23 @@ export async function registerRoutes(app: Express) {
       createdAt: new Date().toISOString(),
     };
     res.json(mockUser);
+  });
+
+  app.patch("/api/user/profile", async (req, res) => {
+    try {
+      const { name, role } = req.body;
+      // In a real app, this would update the user in the database
+      // For now, just return the updated mock user
+      res.json({
+        id: 1,
+        name: name || "Demo User",
+        email: "demo@example.com",
+        role: role || "product_manager",
+        createdAt: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   // Existing feature routes
