@@ -5,8 +5,7 @@ import admin from "firebase-admin";
 // Initialize Firebase Admin if not already initialized
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    authDomain: `${process.env.FIREBASE_PROJECT_ID}.firebaseapp.com` //Adding authDomain
+    projectId: process.env.FIREBASE_PROJECT_ID
   });
 }
 
@@ -29,16 +28,16 @@ export function setupAuth(app: Express) {
     }
   }
 
-  // Protected route - require authentication
+  // Protected routes - require authentication
   app.use(["/api/features", "/api/prds", "/api/backlog"], authenticateToken);
 
   // Public route for Firebase config
   app.get("/api/firebase-config", (_, res) => {
     res.json({
-      apiKey: process.env.FIREBASE_API_KEY,
-      authDomain: `${process.env.FIREBASE_PROJECT_ID}.firebaseapp.com`,
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      appId: process.env.FIREBASE_APP_ID
+      apiKey: process.env.VITE_FIREBASE_API_KEY,
+      authDomain: `${process.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+      appId: process.env.VITE_FIREBASE_APP_ID
     });
   });
 }
