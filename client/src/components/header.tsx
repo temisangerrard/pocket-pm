@@ -16,7 +16,7 @@ export default function Header() {
     <header className="border-b">
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
-          <Link href="/">
+          <Link href="/home">
             <Button variant="link" className="text-xl font-bold p-0 h-auto">
               Pocket PM
             </Button>
@@ -36,7 +36,7 @@ export default function Header() {
                 </Link>
                 <DropdownMenuItem
                   className="cursor-pointer"
-                  onClick={logout}
+                  onClick={() => logout()}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout

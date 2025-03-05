@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { SiGoogle } from "react-icons/si";
-import { Loader2, Mail, AlertCircle } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
+import { Mail, AlertCircle, Loader2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const authSchema = z.object({
@@ -31,8 +29,7 @@ type AuthFormValues = z.infer<typeof authSchema>;
 export default function AuthPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const { user, error, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const { user, error, login, register } = useAuth();
   const [_, setLocation] = useLocation();
 
   const form = useForm<AuthFormValues>({
@@ -44,52 +41,24 @@ export default function AuthPage() {
     },
   });
 
-  useEffect(() => {
-    if (user) {
-      setLocation("/");
-    }
-  }, [user, setLocation]);
-
-  // Display Firebase initialization errors
-  useEffect(() => {
-    if (error) {
-      setAuthError(error.message || "Authentication system is unavailable");
-    } else {
-      setAuthError(null);
-    }
-  }, [error]);
+  // Redirect if already logged in
+  if (user) {
+    setLocation("/home");
+    return null;
+  }
 
   const onSubmit = async (data: AuthFormValues) => {
     setIsSubmitting(true);
-    setAuthError(null);
-    
     try {
       if (isRegistering) {
-        await signUpWithEmail(data.email, data.password, data.name || "");
+        await register(data.email, data.password, data.name || "");
       } else {
-        await signInWithEmail(data.email, data.password);
+        await login(data.email, data.password);
       }
-    } catch (error) {
-      if (error instanceof Error) {
-        setAuthError(error.message);
-      } else {
-        setAuthError("An unknown error occurred during authentication");
-      }
+    } catch (err) {
+      // Error is handled by the mutations
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setAuthError(null);
-    try {
-      await signInWithGoogle();
-    } catch (error) {
-      if (error instanceof Error) {
-        setAuthError(error.message);
-      } else {
-        setAuthError("An unknown error occurred during Google sign-in");
-      }
     }
   };
 
@@ -108,36 +77,16 @@ export default function AuthPage() {
             </p>
           </div>
 
-          {(error || authError) && (
+          {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Authentication Error</AlertTitle>
               <AlertDescription>
-                {authError || error?.message || "There was an error with authentication. Please try again later."}
+                {error.message || "There was an error with authentication. Please try again later."}
               </AlertDescription>
             </Alert>
           )}
 
-          <Button
-            variant="outline"
-            onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-2 mb-4"
-            disabled={isSubmitting || !!error}
-          >
-            <SiGoogle className="mr-2 h-4 w-4" />
-            Continue with Google
-          </Button>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <Separator />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with email
-              </span>
-            </div>
-          </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -188,7 +137,7 @@ export default function AuthPage() {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isSubmitting || !!error}
+                disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
