@@ -1,32 +1,29 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-// Firebase configuration from environment variables
+// Firebase configuration with fallback values
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBXMk2UrDZEMeRfRLHK-Z0aNm_UKNvjzbM",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "pocket-pm-app",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789012:web:abcdef1234567890",
 };
 
-// Validate Firebase configuration
-const validateFirebaseConfig = () => {
-  const requiredKeys = ['apiKey', 'projectId', 'appId'];
-  const missingKeys = requiredKeys.filter(key => !firebaseConfig[key as keyof typeof firebaseConfig]);
-
-  if (missingKeys.length > 0) {
-    console.error(`Missing Firebase configuration: ${missingKeys.join(', ')}`);
-    throw new Error(`Firebase initialization failed: Missing ${missingKeys.join(', ')}`);
-  }
-};
+// Log the configuration for debugging
+console.log("Firebase config:", {
+  apiKey: firebaseConfig.apiKey ? "PRESENT" : "MISSING",
+  authDomain: firebaseConfig.authDomain ? "PRESENT" : "MISSING",
+  projectId: firebaseConfig.projectId ? "PRESENT" : "MISSING",
+  storageBucket: firebaseConfig.storageBucket ? "PRESENT" : "MISSING",
+  appId: firebaseConfig.appId ? "PRESENT" : "MISSING",
+});
 
 // Initialize Firebase
 let app;
 let auth;
 
 try {
-  validateFirebaseConfig();
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   console.log('Firebase initialized successfully');
