@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertFeatureSchema, insertPrdSchema, insertUserSchema } from "@shared/schema"; // Added import
+import { insertFeatureSchema, insertPrdSchema, insertUserSchema } from "@shared/schema";
 import { generatePrdTemplate } from "./utils/openai";
 import { generateBacklogItems } from "./utils/backlog";
 import { setupAuth } from "./auth";
@@ -127,42 +127,40 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // User routes - these remain unchanged as they are not protected
-  app.get("/api/user/profile", async (_req, res) => {
-    // For now, return a mock user. In a real app, this would come from authentication
-    const mockUser = {
-      id: 1,
-      name: "Demo User",
-      email: "demo@example.com",
-      role: "product_manager",
-      createdAt: new Date().toISOString(),
-    };
-    res.json(mockUser);
+  // User routes
+  app.get("/api/user/profile", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const user = await storage.getUser(req.user!.id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json(user);
   });
 
   app.patch("/api/user/profile", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
     try {
       const { name, role } = req.body;
 
-      // Validate the input using our schema
-      const validationResult = insertUserSchema.safeParse({ name, role, email: "demo@example.com" });
-
-      if (!validationResult.success) {
-        return res.status(400).json({
-          error: "Invalid input",
-          details: validationResult.error.errors
-        });
+      // Validate the input
+      if (!name || !role) {
+        return res.status(400).json({ error: "Name and role are required" });
       }
 
-      // In a real app, this would update the user in the database
-      // For now, just return the updated mock user
-      res.json({
-        id: 1,
-        name,
-        email: "demo@example.com",
-        role,
-        createdAt: new Date().toISOString(),
-      });
+      // Update the user in the database
+      const updatedUser = await storage.updateUser(req.user!.id, { name, role });
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json(updatedUser);
     } catch (error: any) {
       console.error('Error updating profile:', error);
       res.status(500).json({ error: "Failed to update profile" });
