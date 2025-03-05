@@ -13,22 +13,34 @@ import Prds from "@/pages/prds";
 import BacklogGenerate from "@/pages/backlog-generate";
 import Profile from "@/pages/profile";
 import AuthPage from "@/pages/auth";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
 
 function Router() {
   return (
     <>
       <Header />
       <main>
-        <Switch>
-          <Route path="/auth" component={AuthPage} />
-          <ProtectedRoute path="/" component={Home} />
-          <ProtectedRoute path="/features" component={FeatureList} />
-          <ProtectedRoute path="/prd/create" component={PrdCreate} />
-          <ProtectedRoute path="/prds" component={Prds} />
-          <ProtectedRoute path="/backlog/generate" component={BacklogGenerate} />
-          <ProtectedRoute path="/profile" component={Profile} />
-          <Route component={NotFound} />
-        </Switch>
+        <Suspense fallback={<LoadingSpinner />}>
+          <Switch>
+            <Route path="/auth" component={AuthPage} />
+            <ProtectedRoute path="/" component={Home} />
+            <ProtectedRoute path="/features" component={FeatureList} />
+            <ProtectedRoute path="/prd/create" component={PrdCreate} />
+            <ProtectedRoute path="/prds" component={Prds} />
+            <ProtectedRoute path="/backlog/generate" component={BacklogGenerate} />
+            <ProtectedRoute path="/profile" component={Profile} />
+            <Route component={NotFound} />
+          </Switch>
+        </Suspense>
       </main>
     </>
   );
@@ -37,10 +49,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-      </AuthProvider>
+      <Suspense fallback={<LoadingSpinner />}>
+        <AuthProvider>
+          <Router />
+          <Toaster />
+        </AuthProvider>
+      </Suspense>
     </QueryClientProvider>
   );
 }
