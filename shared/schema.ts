@@ -1,17 +1,23 @@
-import { pgTable, text, serial, integer, numeric, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, numeric, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
   name: text("name").notNull(),
-  email: text("email").notNull(),
+  email: text("email").notNull().unique(),
   role: text("role").notNull().default('product_manager'),
+  isSubscribed: boolean("is_subscribed").default(false),
+  subscriptionEndsAt: timestamp("subscription_ends_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const features = pgTable("features", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
   reach: integer("reach").notNull(),
@@ -21,10 +27,13 @@ export const features = pgTable("features", {
   score: numeric("score", { precision: 10, scale: 2 }).notNull(),
   order: integer("order").notNull(),
   priority: text("priority").notNull().default('should'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const prds = pgTable("prds", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
   name: text("name").notNull(),
   description: text("description").notNull(),
   sections: jsonb("sections").notNull(),
@@ -33,8 +42,11 @@ export const prds = pgTable("prds", {
 });
 
 export const insertUserSchema = createInsertSchema(users)
-  .omit({ id: true, createdAt: true })
+  .omit({ id: true, createdAt: true, updatedAt: true, isSubscribed: true, subscriptionEndsAt: true })
   .extend({
+    username: z.string().min(3, "Username must be at least 3 characters"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    email: z.string().email("Invalid email address"),
     role: z.enum([
       'product_manager',
       'product_owner',
@@ -59,7 +71,7 @@ export const insertUserSchema = createInsertSchema(users)
   });
 
 export const insertFeatureSchema = createInsertSchema(features)
-  .omit({ id: true, score: true, order: true })
+  .omit({ id: true, score: true, order: true, userId: true, createdAt: true, updatedAt: true })
   .extend({
     reach: z.number().min(1).max(10),
     impact: z.number().min(1).max(10),
@@ -69,7 +81,7 @@ export const insertFeatureSchema = createInsertSchema(features)
   });
 
 export const insertPrdSchema = createInsertSchema(prds)
-  .omit({ id: true, createdAt: true, updatedAt: true })
+  .omit({ id: true, userId: true, createdAt: true, updatedAt: true })
   .extend({
     sections: z.array(z.object({
       title: z.string(),

@@ -1,8 +1,17 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { UserCircle } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { UserCircle, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Header() {
+  const { user, logoutMutation } = useAuth();
+
   return (
     <header className="border-b">
       <div className="container mx-auto px-4 py-3">
@@ -10,11 +19,29 @@ export default function Header() {
           <Link href="/">
             <a className="text-xl font-bold">Pocket PM</a>
           </Link>
-          <Link href="/profile">
-            <Button variant="ghost" size="icon">
-              <UserCircle className="h-6 w-6" />
-            </Button>
-          </Link>
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <UserCircle className="h-6 w-6" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <Link href="/profile">
+                  <DropdownMenuItem className="cursor-pointer">
+                    Profile
+                  </DropdownMenuItem>
+                </Link>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => logoutMutation.mutate()}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </header>

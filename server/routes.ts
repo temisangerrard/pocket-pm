@@ -1,55 +1,25 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertFeatureSchema, insertPrdSchema, insertUserSchema } from "@shared/schema";
+import { insertFeatureSchema, insertPrdSchema } from "@shared/schema";
 import { generatePrdTemplate } from "./utils/openai";
 import { generateBacklogItems } from "./utils/backlog";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express) {
-  // User routes
-  app.get("/api/user/profile", async (_req, res) => {
-    // For now, return a mock user. In a real app, this would come from authentication
-    const mockUser = {
-      id: 1,
-      name: "Demo User",
-      email: "demo@example.com",
-      role: "product_manager",
-      createdAt: new Date().toISOString(),
-    };
-    res.json(mockUser);
-  });
+  // Set up authentication routes and middleware
+  setupAuth(app);
 
-  app.patch("/api/user/profile", async (req, res) => {
-    try {
-      const { name, role } = req.body;
-
-      // Validate the input using our schema
-      const validationResult = insertUserSchema.safeParse({ name, role, email: "demo@example.com" });
-
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          error: "Invalid input",
-          details: validationResult.error.errors 
-        });
-      }
-
-      // In a real app, this would update the user in the database
-      // For now, just return the updated mock user
-      res.json({
-        id: 1,
-        name,
-        email: "demo@example.com",
-        role,
-        createdAt: new Date().toISOString(),
-      });
-    } catch (error: any) {
-      console.error('Error updating profile:', error);
-      res.status(500).json({ error: "Failed to update profile" });
+  // Protected routes - require authentication
+  app.use(["/api/features", "/api/prds", "/api/prd", "/api/backlog"], (req, res, next) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Authentication required" });
     }
+    next();
   });
 
-  // Existing feature routes
-  app.get("/api/features", async (_req, res) => {
+  // Existing feature routes with user context
+  app.get("/api/features", async (req, res) => {
     const features = await storage.getFeatures();
     res.json(features);
   });
@@ -60,7 +30,10 @@ export async function registerRoutes(app: Express) {
       return res.status(400).json({ error: result.error });
     }
 
-    const feature = await storage.createFeature(result.data);
+    const feature = await storage.createFeature({
+      ...result.data,
+      userId: req.user!.id,
+    });
     res.json(feature);
   });
 
@@ -86,7 +59,7 @@ export async function registerRoutes(app: Express) {
     res.status(204).send();
   });
 
-  // PRD routes
+  // PRD routes with user context
   app.post("/api/prd/generate", async (req, res) => {
     try {
       const { description, industry } = req.body;
@@ -108,11 +81,14 @@ export async function registerRoutes(app: Express) {
       return res.status(400).json({ error: result.error });
     }
 
-    const prd = await storage.createPrd(result.data);
+    const prd = await storage.createPrd({
+      ...result.data,
+      userId: req.user!.id,
+    });
     res.json(prd);
   });
 
-  app.get("/api/prds", async (_req, res) => {
+  app.get("/api/prds", async (req, res) => {
     const prds = await storage.getPrds();
     res.json(prds);
   });
@@ -138,7 +114,10 @@ export async function registerRoutes(app: Express) {
       const features = await generateBacklogItems(input);
 
       for (const feature of features) {
-        await storage.createFeature(feature);
+        await storage.createFeature({
+          ...feature,
+          userId: req.user!.id,
+        });
       }
 
       res.json({ message: "Backlog items generated successfully" });
@@ -147,6 +126,49 @@ export async function registerRoutes(app: Express) {
       res.status(500).json({ error: "Failed to generate backlog items" });
     }
   });
+
+  // User routes - these remain unchanged as they are not protected
+  app.get("/api/user/profile", async (_req, res) => {
+    // For now, return a mock user. In a real app, this would come from authentication
+    const mockUser = {
+      id: 1,
+      name: "Demo User",
+      email: "demo@example.com",
+      role: "product_manager",
+      createdAt: new Date().toISOString(),
+    };
+    res.json(mockUser);
+  });
+
+  app.patch("/api/user/profile", async (req, res) => {
+    try {
+      const { name, role } = req.body;
+
+      // Validate the input using our schema
+      const validationResult = insertUserSchema.safeParse({ name, role, email: "demo@example.com" });
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Invalid input",
+          details: validationResult.error.errors
+        });
+      }
+
+      // In a real app, this would update the user in the database
+      // For now, just return the updated mock user
+      res.json({
+        id: 1,
+        name,
+        email: "demo@example.com",
+        role,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
 
   return createServer(app);
 }

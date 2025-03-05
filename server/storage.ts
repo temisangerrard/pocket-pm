@@ -1,98 +1,114 @@
-import { features, type Feature, type InsertFeature } from "@shared/schema";
-import { prds, type Prd, type InsertPrd } from "@shared/schema";
+import { users, features, prds, type Feature, type InsertFeature, type Prd, type InsertPrd, type User, type InsertUser } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import memorystore from "memorystore";
+import session from "express-session";
+
+const MemoryStore = memorystore(session);
 
 export interface IStorage {
+  // User methods
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+
   // Feature methods
   getFeatures(): Promise<Feature[]>;
   getFeature(id: number): Promise<Feature | undefined>;
-  createFeature(feature: InsertFeature): Promise<Feature>;
+  createFeature(feature: InsertFeature & { userId: number }): Promise<Feature>;
   updateFeatureOrder(id: number, order: number): Promise<Feature>;
   deleteFeature(id: number): Promise<void>;
 
   // PRD methods
   getPrds(): Promise<Prd[]>;
   getPrd(id: number): Promise<Prd | undefined>;
-  createPrd(prd: InsertPrd): Promise<Prd>;
+  createPrd(prd: InsertPrd & { userId: number }): Promise<Prd>;
+
+  // Session store for authentication
+  sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private features: Map<number, Feature>;
-  private prds: Map<number, Prd>;
-  private currentFeatureId: number;
-  private currentPrdId: number;
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
 
   constructor() {
-    this.features = new Map();
-    this.prds = new Map();
-    this.currentFeatureId = 1;
-    this.currentPrdId = 1;
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
   }
 
-  // Existing Feature methods
-  private calculateScore(feature: InsertFeature): number {
-    return (feature.reach * feature.impact * feature.confidence) / feature.effort;
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  // Feature methods
   async getFeatures(): Promise<Feature[]> {
-    return Array.from(this.features.values()).sort((a, b) => a.order - b.order);
+    return db.select().from(features).orderBy(features.order);
   }
 
   async getFeature(id: number): Promise<Feature | undefined> {
-    return this.features.get(id);
+    const [feature] = await db.select().from(features).where(eq(features.id, id));
+    return feature;
   }
 
-  async createFeature(insertFeature: InsertFeature): Promise<Feature> {
-    const id = this.currentFeatureId++;
-    const order = this.features.size;
-    const score = this.calculateScore(insertFeature);
+  async createFeature(insertFeature: InsertFeature & { userId: number }): Promise<Feature> {
+    const score = (insertFeature.reach * insertFeature.impact * insertFeature.confidence) / insertFeature.effort;
+    const allFeatures = await this.getFeatures();
+    const order = allFeatures.length;
 
-    const feature: Feature = {
-      ...insertFeature,
-      id,
-      score,
-      order,
-    };
+    const [feature] = await db
+      .insert(features)
+      .values({
+        ...insertFeature,
+        score,
+        order,
+      })
+      .returning();
 
-    this.features.set(id, feature);
     return feature;
   }
 
   async updateFeatureOrder(id: number, newOrder: number): Promise<Feature> {
-    const feature = this.features.get(id);
-    if (!feature) throw new Error("Feature not found");
+    const [feature] = await db
+      .update(features)
+      .set({ order: newOrder })
+      .where(eq(features.id, id))
+      .returning();
 
-    const updatedFeature = { ...feature, order: newOrder };
-    this.features.set(id, updatedFeature);
-    return updatedFeature;
+    if (!feature) throw new Error("Feature not found");
+    return feature;
   }
 
   async deleteFeature(id: number): Promise<void> {
-    this.features.delete(id);
+    await db.delete(features).where(eq(features.id, id));
   }
 
   // PRD methods
   async getPrds(): Promise<Prd[]> {
-    return Array.from(this.prds.values());
+    return db.select().from(prds);
   }
 
   async getPrd(id: number): Promise<Prd | undefined> {
-    return this.prds.get(id);
+    const [prd] = await db.select().from(prds).where(eq(prds.id, id));
+    return prd;
   }
 
-  async createPrd(prd: InsertPrd): Promise<Prd> {
-    const id = this.currentPrdId++;
-    const now = new Date();
-
-    const newPrd: Prd = {
-      ...prd,
-      id,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    this.prds.set(id, newPrd);
-    return newPrd;
+  async createPrd(insertPrd: InsertPrd & { userId: number }): Promise<Prd> {
+    const [prd] = await db.insert(prds).values(insertPrd).returning();
+    return prd;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
