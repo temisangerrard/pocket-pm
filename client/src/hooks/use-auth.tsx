@@ -6,11 +6,13 @@ import { useToast } from "@/hooks/use-toast";
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
   signOut,
   onAuthStateChanged,
+  getRedirectResult,
   type User as FirebaseUser
 } from "firebase/auth";
 import { auth, initializeFirebase } from "@/lib/firebase";
@@ -49,6 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     });
 
+    // Check for redirect result
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          toast({ title: "Successfully signed in with Google" });
+        }
+      })
+      .catch((error) => {
+        handleAuthError(error);
+      });
+
     return () => unsubscribe();
   }, [isInitialized]);
 
@@ -62,7 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error.code === 'auth/popup-closed-by-user') {
       message = "Sign-in window was closed";
     } else if (error.code === 'auth/popup-blocked') {
-      message = "Sign-in popup was blocked. Please allow popups for this site.";
+      // If popup is blocked, we'll use redirect method instead
+      return true;
     } else if (error.code === 'auth/email-already-in-use') {
       message = "Email already in use. Please sign in instead.";
     } else if (error.code === 'auth/invalid-email') {
@@ -78,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       description: message,
       variant: "destructive",
     });
+    return false;
   };
 
   const signInWithGoogle = async () => {
@@ -93,9 +108,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      toast({ title: "Successfully signed in with Google" });
     } catch (error: any) {
-      handleAuthError(error);
+      // If popup is blocked, try redirect method
+      if (handleAuthError(error)) {
+        const provider = new GoogleAuthProvider();
+        await signInWithRedirect(auth, provider);
+      }
     }
   };
 
