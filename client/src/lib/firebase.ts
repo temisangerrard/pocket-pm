@@ -1,31 +1,21 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { apiRequest } from "@/lib/queryClient";
 
-let app: ReturnType<typeof initializeApp>;
-let auth: ReturnType<typeof getAuth>;
+// Get Firebase configuration from environment variables
+const firebaseConfig = {
+  apiKey: import.meta.env.FIREBASE_API_KEY,
+  authDomain: `${import.meta.env.FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: import.meta.env.FIREBASE_PROJECT_ID,
+};
 
-export async function initializeFirebase() {
-  try {
-    const response = await fetch("/api/firebase-config");
-    const config = await response.json();
+// Log configuration (remove in production)
+console.log('Firebase Config:', {
+  ...firebaseConfig,
+  apiKey: firebaseConfig.apiKey ? '[PRESENT]' : '[MISSING]',
+});
 
-    const firebaseConfig = {
-      apiKey: config.apiKey,
-      authDomain: `${config.projectId}.firebaseapp.com`,
-      projectId: config.projectId,
-      storageBucket: `${config.projectId}.appspot.com`,
-      appId: config.appId,
-    };
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-  } catch (error) {
-    console.error("Failed to initialize Firebase:", error);
-  }
-}
-
-// Initialize Firebase when this module is imported
-initializeFirebase();
-
-export { app, auth };
+export { auth };
