@@ -85,6 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       message = "Incorrect password";
     } else if (error.code === 'auth/user-not-found') {
       message = "No account found with this email";
+    } else if (error.code === 'auth/weak-password') {
+      message = "Password should be at least 6 characters";
+    } else if (error.code === 'auth/network-request-failed') {
+      message = "Network error. Please check your connection";
     }
 
     toast({
@@ -109,7 +113,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
     } catch (error: any) {
-      // If popup is blocked, try redirect method
       if (handleAuthError(error)) {
         const provider = new GoogleAuthProvider();
         await signInWithRedirect(auth, provider);
@@ -118,7 +121,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    if (!isInitialized) return;
+    if (!isInitialized) {
+      toast({
+        title: "Error",
+        description: "Authentication system is still initializing",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -129,7 +139,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUpWithEmail = async (email: string, password: string, name: string) => {
-    if (!isInitialized) return;
+    if (!isInitialized) {
+      toast({
+        title: "Error",
+        description: "Authentication system is still initializing",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);

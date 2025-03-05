@@ -29,6 +29,7 @@ type AuthFormValues = z.infer<typeof authSchema>;
 
 export default function AuthPage() {
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const [_, setLocation] = useLocation();
 
@@ -48,10 +49,15 @@ export default function AuthPage() {
   }, [user, setLocation]);
 
   const onSubmit = async (data: AuthFormValues) => {
-    if (isRegistering) {
-      await signUpWithEmail(data.email, data.password, data.name || "");
-    } else {
-      await signInWithEmail(data.email, data.password);
+    setIsSubmitting(true);
+    try {
+      if (isRegistering) {
+        await signUpWithEmail(data.email, data.password, data.name || "");
+      } else {
+        await signInWithEmail(data.email, data.password);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -75,7 +81,7 @@ export default function AuthPage() {
             onClick={signInWithGoogle}
             className="w-full flex items-center justify-center gap-2 mb-4"
           >
-            <SiGoogle className="h-4 w-4" />
+            <SiGoogle className="mr-2 h-4 w-4" />
             Continue with Google
           </Button>
 
@@ -136,8 +142,12 @@ export default function AuthPage() {
                 )}
               />
 
-              <Button type="submit" className="w-full">
-                <Mail className="mr-2 h-4 w-4" />
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail className="mr-2 h-4 w-4" />
+                )}
                 {isRegistering ? "Create Account" : "Sign In"}
               </Button>
             </form>
