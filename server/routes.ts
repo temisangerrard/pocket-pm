@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { insertFeatureSchema, insertPrdSchema } from "@shared/schema";
+import { insertFeatureSchema, insertPrdSchema, insertUserSchema } from "@shared/schema"; // Added import
 import { generatePrdTemplate } from "./utils/openai";
 import { generateBacklogItems } from "./utils/backlog";
 import { setupAuth } from "./auth";
@@ -9,6 +9,15 @@ import { setupAuth } from "./auth";
 export async function registerRoutes(app: Express) {
   // Set up authentication routes and middleware
   setupAuth(app);
+
+  // Firebase configuration endpoint
+  app.get("/api/firebase-config", (req, res) => {
+    res.json({
+      apiKey: process.env.FIREBASE_API_KEY,
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      appId: process.env.FIREBASE_APP_ID,
+    });
+  });
 
   // Protected routes - require authentication
   app.use(["/api/features", "/api/prds", "/api/prd", "/api/backlog"], (req, res, next) => {
