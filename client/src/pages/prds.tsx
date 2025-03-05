@@ -4,7 +4,7 @@ import { Prd } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarIcon, FilePlus, ListChecks } from "lucide-react";
+import { CalendarIcon, FilePlus, ListChecks, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 
 export default function Prds() {
@@ -19,7 +19,14 @@ export default function Prds() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Product Requirements Documents</h1>
+        <div className="flex items-center gap-4">
+          <Link href="/">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-bold">Product Requirements Documents</h1>
+        </div>
         <Link to="/prd/create">
           <Button>
             <FilePlus className="mr-2 h-4 w-4" />
