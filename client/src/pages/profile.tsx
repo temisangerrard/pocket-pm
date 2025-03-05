@@ -4,7 +4,9 @@ import { User } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, UserCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { ArrowLeft, UserCircle, Mail, Calendar, Briefcase } from "lucide-react";
 
 export default function Profile() {
   const { data: user, isLoading } = useQuery<User>({
@@ -14,6 +16,14 @@ export default function Profile() {
   if (isLoading) {
     return <div className="p-8"><Skeleton className="h-[400px] w-full" /></div>;
   }
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -29,39 +39,50 @@ export default function Profile() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserCircle className="h-6 w-6" />
-              User Profile
-            </CardTitle>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarFallback>
+                  {user ? getInitials(user.name) : "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <CardTitle className="text-2xl">
+                  {user?.name}
+                </CardTitle>
+                <Badge variant="outline" className="mt-2">
+                  {user?.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </Badge>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             {user ? (
               <>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Name</label>
-                  <p className="text-lg">{user.name}</p>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Mail className="h-4 w-4" />
+                  <span>{user.email}</span>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Email</label>
-                  <p className="text-lg">{user.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Role</label>
-                  <p className="text-lg capitalize">{user.role.replace('_', ' ')}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Member Since</label>
-                  <p className="text-lg">
-                    {new Date(user.createdAt).toLocaleDateString('en-US', {
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    Joined {new Date(user.createdAt).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
                     })}
-                  </p>
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Briefcase className="h-4 w-4" />
+                  <span>
+                    Role: {user.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </span>
                 </div>
               </>
             ) : (
-              <p className="text-muted-foreground">No profile information available.</p>
+              <p className="text-muted-foreground text-center py-4">
+                No profile information available.
+              </p>
             )}
           </CardContent>
         </Card>
