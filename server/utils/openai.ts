@@ -14,6 +14,37 @@ interface PrdSection {
   order: number;
 }
 
+// Fallback sample PRD template when API is unavailable
+const getSamplePrdSections = (productDescription: string, industry?: string): PrdSection[] => {
+  return [
+    {
+      title: "Executive Summary",
+      content: `A high-level overview of ${productDescription}${industry ? ` for the ${industry} industry` : ''}.`,
+      order: 0
+    },
+    {
+      title: "Problem Statement",
+      content: "Define the specific problems this product aims to solve and the target audience's pain points.",
+      order: 1
+    },
+    {
+      title: "Market Analysis",
+      content: "Overview of the current market landscape, competitor analysis, and target market segments.",
+      order: 2
+    },
+    {
+      title: "Product Goals and Objectives",
+      content: "Key objectives, success metrics, and timeline for product development and launch.",
+      order: 3
+    },
+    {
+      title: "Key Features and Functionality",
+      content: "Detailed breakdown of core features, user flows, and technical requirements.",
+      order: 4
+    }
+  ];
+};
+
 export async function generatePrdTemplate(
   productDescription: string,
   industry?: string
@@ -38,18 +69,7 @@ For each section, provide meaningful placeholder content that product managers c
 Format your response as a JSON object with a 'sections' array, where each section has:
 - title: The section name
 - content: Detailed placeholder content
-- order: Numerical order starting from 0
-
-Example format:
-{
-  "sections": [
-    {
-      "title": "Executive Summary",
-      "content": "Brief overview of the product...",
-      "order": 0
-    }
-  ]
-}`;
+- order: Numerical order starting from 0`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -84,13 +104,8 @@ Example format:
   } catch (error: any) {
     console.error('Error generating PRD template:', error);
 
-    // Handle different types of OpenAI API errors
-    if (error.code === 'insufficient_quota') {
-      throw new Error('OpenAI API quota exceeded. Please try again later.');
-    } else if (error.status === 429) {
-      throw new Error('Too many requests. Please try again in a few minutes.');
-    }
-
-    throw new Error('Failed to generate PRD template. Please try again.');
+    // If API quota is exceeded or any other error, use the fallback template
+    console.log('Using fallback PRD template generator');
+    return getSamplePrdSections(productDescription, industry);
   }
 }
