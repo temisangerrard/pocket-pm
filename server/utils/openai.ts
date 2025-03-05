@@ -1,6 +1,12 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI();
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error("OPENAI_API_KEY is required");
+}
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 interface PrdSection {
   title: string;
@@ -22,7 +28,7 @@ Keep the content concise but meaningful.`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
@@ -40,6 +46,9 @@ Keep the content concise but meaningful.`;
       throw new Error("No content received from OpenAI");
     }
 
+    // Log the raw response for debugging
+    console.log('OpenAI API Response:', response.choices[0].message.content);
+
     const result = JSON.parse(response.choices[0].message.content);
     if (!result.sections || !Array.isArray(result.sections)) {
       throw new Error("Invalid response format from OpenAI");
@@ -49,7 +58,7 @@ Keep the content concise but meaningful.`;
   } catch (error: any) {
     console.error('Error generating PRD template:', error);
 
-    // Handle different types of OpenAI errors
+    // Handle different types of OpenAI API errors
     if (error.code === 'insufficient_quota') {
       throw new Error('OpenAI API quota exceeded. Please try again later.');
     } else if (error.status === 429) {
