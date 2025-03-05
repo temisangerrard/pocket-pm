@@ -1,88 +1,68 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
 import { SiGoogle } from "react-icons/si";
-import { Loader2, Mail } from "lucide-react";
-
-const authSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  name: z.string().min(2, "Name must be at least 2 characters").optional(),
-});
-
-type AuthFormValues = z.infer<typeof authSchema>;
 
 export default function AuthPage() {
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const [_, setLocation] = useLocation();
+  const { toast } = useToast();
 
-  const form = useForm<AuthFormValues>({
-    resolver: zodResolver(
-      isRegistering 
-        ? authSchema 
-        : authSchema.omit({ name: true })
-    ),
-    defaultValues: {
-      email: "",
-      password: "",
-      name: "",
-    },
-  });
-
-  useEffect(() => {
-    if (user) {
-      setLocation("/");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [user, setLocation]);
 
-  const onSubmit = async (data: AuthFormValues) => {
-    setIsSubmitting(true);
+    setLoading(true);
     try {
-      if (isRegistering) {
-        await signUpWithEmail(data.email, data.password, data.name || "");
+      if (isSignUp) {
+        await signUpWithEmail(email, password);
       } else {
-        await signInWithEmail(data.email, data.password);
+        await signInWithEmail(email, password);
       }
+      setLocation("/");
+    } catch (error) {
+      // Error is handled in the auth hook
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+      setLocation("/");
+    } catch (error) {
+      // Error is handled in the auth hook
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm p-6">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-2">
-            {isRegistering ? "Create Account" : "Welcome Back"}
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            {isRegistering
-              ? "Sign up to start managing your products"
-              : "Sign in to continue"}
-          </p>
-        </div>
+        <h1 className="text-2xl font-bold mb-6">
+          {isSignUp ? "Create Account" : "Sign In"}
+        </h1>
 
         <Button
           variant="outline"
-          onClick={signInWithGoogle}
+          onClick={handleGoogleSignIn}
           className="w-full mb-6"
-          disabled={isSubmitting}
+          disabled={loading}
         >
           <SiGoogle className="mr-2 h-4 w-4" />
           Continue with Google
@@ -99,74 +79,38 @@ export default function AuthPage() {
           </div>
         </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {isRegistering && (
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
             />
-
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          </div>
+          <div>
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
             />
-
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Mail className="mr-2 h-4 w-4" />
-              )}
-              {isRegistering ? "Create Account" : "Sign In"}
-            </Button>
-          </form>
-        </Form>
+          </div>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {isSignUp ? "Create Account" : "Sign In"}
+          </Button>
+        </form>
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
-          {isRegistering ? "Already have an account? " : "Need an account? "}
+          {isSignUp ? "Already have an account? " : "Need an account? "}
           <Button
             variant="link"
             className="p-0 h-auto font-normal"
-            onClick={() => {
-              setIsRegistering(!isRegistering);
-              form.reset();
-            }}
+            onClick={() => setIsSignUp(!isSignUp)}
           >
-            {isRegistering ? "Sign in" : "Create one"}
+            {isSignUp ? "Sign in" : "Create one"}
           </Button>
         </p>
       </Card>
