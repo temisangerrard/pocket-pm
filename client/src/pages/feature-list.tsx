@@ -4,6 +4,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import FeatureForm from "@/components/feature-form";
 import CsvImport from "@/components/csv-import";
@@ -11,6 +12,20 @@ import PriorityChart from "@/components/priority-chart";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowUpDown, Plus, Trash2 } from "lucide-react";
+
+const priorityColors = {
+  must: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  should: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  could: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  wont: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+} as const;
+
+const priorityLabels = {
+  must: "Must Have",
+  should: "Should Have",
+  could: "Could Have",
+  wont: "Won't Have",
+} as const;
 
 export default function FeatureList() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -43,6 +58,14 @@ export default function FeatureList() {
     return <div className="p-8"><Skeleton className="h-[400px] w-full" /></div>;
   }
 
+  // Group features by priority
+  const groupedFeatures = features?.reduce((acc, feature) => {
+    const priority = feature.priority || 'should';
+    if (!acc[priority]) acc[priority] = [];
+    acc[priority].push(feature);
+    return acc;
+  }, {} as Record<string, Feature[]>);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -69,56 +92,73 @@ export default function FeatureList() {
             <PriorityChart features={features || []} />
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="pt-6">
             <h3 className="text-lg font-semibold mb-4">Sprint Planning Suggestions</h3>
             <p className="text-muted-foreground">
-              Based on RICE scores, consider including the top {Math.min(3, features?.length || 0)} features
-              in your next sprint for maximum impact.
+              Based on RICE scores and MoSCoW prioritization, consider including 
+              Must-have features and top {Math.min(3, features?.length || 0)} Should-have 
+              features in your next sprint.
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="space-y-4">
-        {features?.map((feature, index) => (
-          <Card key={feature.id}>
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
-                <div className="mt-2 text-sm">
-                  <span className="font-medium">RICE Score: </span>
-                  {feature.score.toFixed(2)}
-                </div>
+      <div className="space-y-8">
+        {(['must', 'should', 'could', 'wont'] as const).map(priority => (
+          groupedFeatures?.[priority]?.length ? (
+            <div key={priority}>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Badge variant="secondary" className={priorityColors[priority]}>
+                  {priorityLabels[priority]}
+                </Badge>
+                <span className="text-muted-foreground">
+                  ({groupedFeatures[priority].length} features)
+                </span>
+              </h2>
+              <div className="space-y-4">
+                {groupedFeatures[priority].map((feature, index) => (
+                  <Card key={feature.id}>
+                    <CardContent className="p-6 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold">{feature.title}</h3>
+                        <p className="text-sm text-muted-foreground">{feature.description}</p>
+                        <div className="mt-2 text-sm">
+                          <span className="font-medium">RICE Score: </span>
+                          {Number(feature.score).toFixed(2)}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            if (index > 0) {
+                              reorderMutation.mutate({
+                                id: feature.id,
+                                order: index - 1,
+                              });
+                            }
+                          }}
+                          disabled={index === 0}
+                        >
+                          <ArrowUpDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => deleteMutation.mutate(feature.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    if (index > 0) {
-                      reorderMutation.mutate({
-                        id: feature.id,
-                        order: index - 1,
-                      });
-                    }
-                  }}
-                  disabled={index === 0}
-                >
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => deleteMutation.mutate(feature.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          ) : null
         ))}
       </div>
     </div>

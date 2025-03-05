@@ -36,6 +36,7 @@ export default function CsvImport() {
             impact: parseInt(row.impact) || 5,
             confidence: parseInt(row.confidence) || 5,
             effort: parseInt(row.effort) || 5,
+            priority: (row.priority?.toLowerCase() || "should") as "must" | "should" | "could" | "wont",
           };
           mutation.mutate(feature);
         });

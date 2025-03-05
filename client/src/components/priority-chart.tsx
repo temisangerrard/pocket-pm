@@ -14,11 +14,11 @@ interface PriorityChartProps {
 
 export default function PriorityChart({ features }: PriorityChartProps) {
   const data = features
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => Number(b.score) - Number(a.score))
     .slice(0, 5)
     .map((feature) => ({
       name: feature.title,
-      score: parseFloat(feature.score.toFixed(2)),
+      score: Number(feature.score).toFixed(2),
     }));
 
   return (

@@ -16,6 +16,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FeatureFormProps {
   onSuccess?: () => void;
@@ -32,6 +39,7 @@ export default function FeatureForm({ onSuccess }: FeatureFormProps) {
       impact: 5,
       confidence: 5,
       effort: 5,
+      priority: "should",
     },
   });
 
@@ -73,6 +81,30 @@ export default function FeatureForm({ onSuccess }: FeatureFormProps) {
               <FormControl>
                 <Textarea {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="priority"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>MoSCoW Priority</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="must">Must Have</SelectItem>
+                  <SelectItem value="should">Should Have</SelectItem>
+                  <SelectItem value="could">Could Have</SelectItem>
+                  <SelectItem value="wont">Won't Have</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

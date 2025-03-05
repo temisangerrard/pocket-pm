@@ -12,7 +12,7 @@ const openai = new OpenAI({
 export async function generateBacklogItems(
   description: string
 ): Promise<InsertFeature[]> {
-  const prompt = `Based on the following product description, generate a list of specific, actionable backlog items. Each item should include a title, description, and initial RICE scoring parameters (reach, impact, confidence, effort on a scale of 1-10).
+  const prompt = `Based on the following product description, generate a list of specific, actionable backlog items. Each item should include a title, description, initial RICE scoring parameters (reach, impact, confidence, effort on a scale of 1-10), and MoSCoW priority level.
 
 Product Description:
 ${description}
@@ -24,6 +24,7 @@ Generate features that cover both core functionality and important supporting fe
 - impact: Potential impact on users (1-10)
 - confidence: Confidence in estimates (1-10)
 - effort: Development effort required (1-10)
+- priority: MoSCoW priority level ("must", "should", "could", or "wont")
 
 Example format:
 {
@@ -34,7 +35,8 @@ Example format:
       "reach": 9,
       "impact": 8,
       "confidence": 9,
-      "effort": 6
+      "effort": 6,
+      "priority": "must"
     }
   ]
 }`;
@@ -82,6 +84,7 @@ Example format:
         impact: 5,
         confidence: 5,
         effort: 5,
+        priority: "should",
       },
     ];
   }
