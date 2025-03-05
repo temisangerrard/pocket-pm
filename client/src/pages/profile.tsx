@@ -19,6 +19,18 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
+const ROLES = {
+  product_manager: "Product Manager",
+  product_owner: "Product Owner",
+  scrum_master: "Scrum Master",
+  technical_lead: "Technical Lead",
+  developer: "Developer",
+  designer: "Designer",
+  qa_engineer: "QA Engineer",
+  business_analyst: "Business Analyst",
+  stakeholder: "Stakeholder"
+} as const;
+
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
@@ -27,11 +39,16 @@ export default function Profile() {
   });
 
   const [editedName, setEditedName] = useState(user?.name || "");
-  const [editedRole, setEditedRole] = useState(user?.role || "product_manager");
+  const [editedRole, setEditedRole] = useState<keyof typeof ROLES>(user?.role as keyof typeof ROLES || "product_manager");
 
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<User>) => {
-      await apiRequest("PATCH", "/api/user/profile", data);
+      const response = await apiRequest("PATCH", "/api/user/profile", data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update profile");
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/profile"] });
@@ -68,7 +85,7 @@ export default function Profile() {
 
   const handleEdit = () => {
     setEditedName(user?.name || "");
-    setEditedRole(user?.role || "product_manager");
+    setEditedRole(user?.role as keyof typeof ROLES || "product_manager");
     setIsEditing(true);
   };
 
@@ -118,18 +135,20 @@ export default function Profile() {
                 )}
                 <Badge variant="outline" className="mt-2">
                   {isEditing ? (
-                    <Select value={editedRole} onValueChange={setEditedRole}>
+                    <Select value={editedRole} onValueChange={(value: keyof typeof ROLES) => setEditedRole(value)}>
                       <SelectTrigger className="w-[180px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="product_manager">Product Manager</SelectItem>
-                        <SelectItem value="developer">Developer</SelectItem>
-                        <SelectItem value="stakeholder">Stakeholder</SelectItem>
+                        {Object.entries(ROLES).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   ) : (
-                    user?.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+                    ROLES[user?.role as keyof typeof ROLES] || "Unknown Role"
                   )}
                 </Badge>
               </div>
@@ -155,14 +174,17 @@ export default function Profile() {
                 <div className="flex items-center gap-3 text-muted-foreground">
                   <Briefcase className="h-4 w-4" />
                   <span>
-                    Role: {isEditing ? editedRole.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) 
-                      : user.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    Role: {isEditing ? ROLES[editedRole] : ROLES[user.role as keyof typeof ROLES] || "Unknown Role"}
                   </span>
                 </div>
 
                 {isEditing && (
                   <div className="flex gap-2 pt-4">
-                    <Button onClick={handleSave} className="flex-1" disabled={updateMutation.isPending}>
+                    <Button 
+                      onClick={handleSave} 
+                      className="flex-1" 
+                      disabled={updateMutation.isPending || !editedName.trim()}
+                    >
                       <Check className="mr-2 h-4 w-4" />
                       Save Changes
                     </Button>

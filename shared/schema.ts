@@ -20,7 +20,7 @@ export const features = pgTable("features", {
   effort: integer("effort").notNull(),
   score: numeric("score", { precision: 10, scale: 2 }).notNull(),
   order: integer("order").notNull(),
-  priority: text("priority").notNull().default('should'), // MoSCoW priority: must, should, could, wont
+  priority: text("priority").notNull().default('should'),
 });
 
 export const prds = pgTable("prds", {
@@ -35,7 +35,17 @@ export const prds = pgTable("prds", {
 export const insertUserSchema = createInsertSchema(users)
   .omit({ id: true, createdAt: true })
   .extend({
-    role: z.enum(['product_manager', 'developer', 'stakeholder']).default('product_manager'),
+    role: z.enum([
+      'product_manager',
+      'product_owner',
+      'scrum_master',
+      'technical_lead',
+      'developer',
+      'designer',
+      'qa_engineer',
+      'business_analyst',
+      'stakeholder'
+    ]).default('product_manager'),
   });
 
 export const insertFeatureSchema = createInsertSchema(features)
