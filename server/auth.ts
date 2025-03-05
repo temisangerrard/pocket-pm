@@ -30,13 +30,17 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
-    secret: "your-secret-key", // In production, this should be an environment variable
+    secret: process.env.SESSION_SECRET || throw new Error('SESSION_SECRET is required'),
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    name: 'sessionId', // Custom cookie name
     cookie: {
       secure: process.env.NODE_ENV === "production",
+      httpOnly: true, // Prevents client-side access to the cookie
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: 'strict', // CSRF protection
+      path: '/',
     },
   };
 
