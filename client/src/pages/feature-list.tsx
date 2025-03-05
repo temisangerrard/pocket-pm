@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import FeatureForm from "@/components/feature-form";
 import CsvImport from "@/components/csv-import";
-import PriorityChart from "@/components/priority-chart";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { ArrowUpDown, Plus, Trash2, FileText, ArrowLeft } from "lucide-react";
@@ -97,25 +96,6 @@ export default function FeatureList() {
             </Button>
           </Link>
         </div>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-8 mb-8">
-        <Card>
-          <CardContent className="pt-6">
-            <PriorityChart features={features || []} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <h3 className="text-lg font-semibold mb-4">Sprint Planning Suggestions</h3>
-            <p className="text-muted-foreground">
-              Based on RICE scores and MoSCoW prioritization, consider including
-              Must-have features and top {Math.min(3, features?.length || 0)} Should-have
-              features in your next sprint.
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       <div className="space-y-8">

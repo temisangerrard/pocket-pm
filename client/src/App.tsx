@@ -8,6 +8,7 @@ import FeatureList from "@/pages/feature-list";
 import PrdCreate from "@/pages/prd-create";
 import Prds from "@/pages/prds";
 import BacklogGenerate from "@/pages/backlog-generate";
+import Profile from "@/pages/profile";
 
 function Router() {
   return (
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/prd/create" component={PrdCreate} />
       <Route path="/prds" component={Prds} />
       <Route path="/backlog/generate" component={BacklogGenerate} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );

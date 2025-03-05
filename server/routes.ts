@@ -6,6 +6,19 @@ import { generatePrdTemplate } from "./utils/openai";
 import { generateBacklogItems } from "./utils/backlog";
 
 export async function registerRoutes(app: Express) {
+  // User routes
+  app.get("/api/user/profile", async (_req, res) => {
+    // For now, return a mock user. In a real app, this would come from authentication
+    const mockUser = {
+      id: 1,
+      name: "Demo User",
+      email: "demo@example.com",
+      role: "product_manager",
+      createdAt: new Date().toISOString(),
+    };
+    res.json(mockUser);
+  });
+
   // Existing feature routes
   app.get("/api/features", async (_req, res) => {
     const features = await storage.getFeatures();
@@ -75,7 +88,7 @@ export async function registerRoutes(app: Express) {
     res.json(prds);
   });
 
-  // New backlog generation endpoint
+  // Backlog generation endpoint
   app.post("/api/backlog/generate", async (req, res) => {
     try {
       const { prdId, description } = req.body;
@@ -90,13 +103,11 @@ export async function registerRoutes(app: Express) {
         if (!prd) {
           return res.status(404).json({ error: "PRD not found" });
         }
-        // Combine PRD sections into a single description
         input = `${prd.description}\n\n${prd.sections.map(s => `${s.title}:\n${s.content}`).join('\n\n')}`;
       }
 
       const features = await generateBacklogItems(input);
 
-      // Save generated features
       for (const feature of features) {
         await storage.createFeature(feature);
       }

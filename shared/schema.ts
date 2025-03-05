@@ -2,6 +2,14 @@ import { pgTable, text, serial, integer, numeric, timestamp, jsonb } from "drizz
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  role: text("role").notNull().default('product_manager'),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const features = pgTable("features", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -23,6 +31,12 @@ export const prds = pgTable("prds", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const insertUserSchema = createInsertSchema(users)
+  .omit({ id: true, createdAt: true })
+  .extend({
+    role: z.enum(['product_manager', 'developer', 'stakeholder']).default('product_manager'),
+  });
 
 export const insertFeatureSchema = createInsertSchema(features)
   .omit({ id: true, score: true, order: true })
@@ -48,3 +62,5 @@ export type InsertFeature = z.infer<typeof insertFeatureSchema>;
 export type Feature = typeof features.$inferSelect;
 export type InsertPrd = z.infer<typeof insertPrdSchema>;
 export type Prd = typeof prds.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
