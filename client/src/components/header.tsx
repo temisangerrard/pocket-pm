@@ -10,7 +10,7 @@ import { UserCircle, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function Header() {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <header className="border-b">
@@ -34,7 +34,7 @@ export default function Header() {
                 </Link>
                 <DropdownMenuItem
                   className="cursor-pointer"
-                  onClick={signOut}
+                  onClick={logout}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout

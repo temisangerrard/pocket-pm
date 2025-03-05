@@ -1,16 +1,31 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { apiRequest } from "@/lib/queryClient";
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
+let app: ReturnType<typeof initializeApp>;
+let auth: ReturnType<typeof getAuth>;
 
-console.log("Firebase Config:", firebaseConfig); // For debugging
+export async function initializeFirebase() {
+  try {
+    const response = await fetch("/api/firebase-config");
+    const config = await response.json();
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+    const firebaseConfig = {
+      apiKey: config.apiKey,
+      authDomain: `${config.projectId}.firebaseapp.com`,
+      projectId: config.projectId,
+      storageBucket: `${config.projectId}.appspot.com`,
+      appId: config.appId,
+    };
 
-export { auth };
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+  } catch (error) {
+    console.error("Failed to initialize Firebase:", error);
+  }
+}
+
+// Initialize Firebase when this module is imported
+initializeFirebase();
+
+export { app, auth };

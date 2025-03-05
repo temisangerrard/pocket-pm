@@ -1,50 +1,94 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { User as SelectUser } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
+  updateProfile,
+  signOut,
   onAuthStateChanged,
-  type User,
+  getRedirectResult,
+  type User as FirebaseUser
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { useToast } from "@/hooks/use-toast";
+import { auth, initializeFirebase } from "@/lib/firebase";
 
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
+type AuthContextType = {
+  user: SelectUser | null;
+  firebaseUser: FirebaseUser | null;
+  isLoading: boolean;
+  error: Error | null;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-}
+  signUpWithEmail: (email: string, password: string, name: string) => Promise<void>;
+  logout: () => Promise<void>;
+};
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
+    // Initialize Firebase
+    initializeFirebase().then(() => {
+      setIsInitialized(true);
     });
-    return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setFirebaseUser(user);
+      setIsLoading(false);
+    });
+
+    // Check for redirect result
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          toast({ title: "Successfully signed in with Google" });
+        }
+      })
+      .catch((error) => {
+        handleAuthError(error);
+      });
+
+    return () => unsubscribe();
+  }, [isInitialized]);
+
+  const { data: user } = useQuery<SelectUser | null>({
+    queryKey: ["/api/user", firebaseUser?.uid],
+    enabled: !!firebaseUser,
+  });
 
   const handleAuthError = (error: any) => {
     let message = "Authentication failed";
-    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-      message = "Invalid email or password";
+    if (error.code === 'auth/popup-closed-by-user') {
+      message = "Sign-in window was closed";
+    } else if (error.code === 'auth/popup-blocked') {
+      // If popup is blocked, we'll use redirect method instead
+      return true;
     } else if (error.code === 'auth/email-already-in-use') {
-      message = "Email is already registered";
-    } else if (error.code === 'auth/weak-password') {
-      message = "Password must be at least 6 characters";
+      message = "Email already in use. Please sign in instead.";
     } else if (error.code === 'auth/invalid-email') {
       message = "Invalid email address";
+    } else if (error.code === 'auth/wrong-password') {
+      message = "Incorrect password";
+    } else if (error.code === 'auth/user-not-found') {
+      message = "No account found with this email";
+    } else if (error.code === 'auth/weak-password') {
+      message = "Password should be at least 6 characters";
+    } else if (error.code === 'auth/network-request-failed') {
+      message = "Network error. Please check your connection";
     }
 
     toast({
@@ -52,21 +96,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       description: message,
       variant: "destructive",
     });
+    return false;
   };
 
   const signInWithGoogle = async () => {
+    if (!isInitialized) {
+      toast({
+        title: "Error",
+        description: "Authentication system is still initializing",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      toast({ title: "Successfully signed in" });
     } catch (error: any) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        handleAuthError(error);
+      if (handleAuthError(error)) {
+        const provider = new GoogleAuthProvider();
+        await signInWithRedirect(auth, provider);
       }
     }
   };
 
   const signInWithEmail = async (email: string, password: string) => {
+    if (!isInitialized) {
+      toast({
+        title: "Error",
+        description: "Authentication system is still initializing",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: "Successfully signed in" });
@@ -75,22 +138,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUpWithEmail = async (email: string, password: string) => {
+  const signUpWithEmail = async (email: string, password: string, name: string) => {
+    if (!isInitialized) {
+      toast({
+        title: "Error",
+        description: "Authentication system is still initializing",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName: name });
       toast({ title: "Account created successfully" });
     } catch (error: any) {
       handleAuthError(error);
     }
   };
 
-  const signOut = async () => {
+  const logout = async () => {
+    if (!isInitialized) return;
+
     try {
-      await firebaseSignOut(auth);
-      toast({ title: "Successfully signed out" });
+      await signOut(auth);
+      queryClient.clear();
+      toast({ title: "Successfully logged out" });
     } catch (error: any) {
       toast({
-        title: "Sign out failed",
+        title: "Logout failed",
         description: error.message,
         variant: "destructive",
       });
@@ -101,11 +177,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        loading,
+        firebaseUser,
+        isLoading: isLoading || !isInitialized,
+        error: null,
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,
-        signOut,
+        logout,
       }}
     >
       {children}
