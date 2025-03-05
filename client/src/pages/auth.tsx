@@ -16,8 +16,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { SiGoogle } from "react-icons/si";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2, Mail, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const authSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -30,7 +31,8 @@ type AuthFormValues = z.infer<typeof authSchema>;
 export default function AuthPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
+  const { user, error, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const [_, setLocation] = useLocation();
 
   const form = useForm<AuthFormValues>({
@@ -48,16 +50,46 @@ export default function AuthPage() {
     }
   }, [user, setLocation]);
 
+  // Display Firebase initialization errors
+  useEffect(() => {
+    if (error) {
+      setAuthError(error.message || "Authentication system is unavailable");
+    } else {
+      setAuthError(null);
+    }
+  }, [error]);
+
   const onSubmit = async (data: AuthFormValues) => {
     setIsSubmitting(true);
+    setAuthError(null);
+    
     try {
       if (isRegistering) {
         await signUpWithEmail(data.email, data.password, data.name || "");
       } else {
         await signInWithEmail(data.email, data.password);
       }
+    } catch (error) {
+      if (error instanceof Error) {
+        setAuthError(error.message);
+      } else {
+        setAuthError("An unknown error occurred during authentication");
+      }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setAuthError(null);
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      if (error instanceof Error) {
+        setAuthError(error.message);
+      } else {
+        setAuthError("An unknown error occurred during Google sign-in");
+      }
     }
   };
 
@@ -76,10 +108,21 @@ export default function AuthPage() {
             </p>
           </div>
 
+          {(error || authError) && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Authentication Error</AlertTitle>
+              <AlertDescription>
+                {authError || error?.message || "There was an error with authentication. Please try again later."}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Button
             variant="outline"
-            onClick={signInWithGoogle}
+            onClick={handleGoogleSignIn}
             className="w-full flex items-center justify-center gap-2 mb-4"
+            disabled={isSubmitting || !!error}
           >
             <SiGoogle className="mr-2 h-4 w-4" />
             Continue with Google
@@ -142,7 +185,11 @@ export default function AuthPage() {
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isSubmitting || !!error}
+              >
                 {isSubmitting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (

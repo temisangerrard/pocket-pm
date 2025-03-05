@@ -1,31 +1,38 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { apiRequest } from "@/lib/queryClient";
 
-let app: ReturnType<typeof initializeApp>;
-let auth: ReturnType<typeof getAuth>;
+// Firebase configuration from environment variables
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.firebaseapp.com`,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: `${import.meta.env.VITE_FIREBASE_PROJECT_ID}.appspot.com`,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
 
-export async function initializeFirebase() {
-  try {
-    const response = await fetch("/api/firebase-config");
-    const config = await response.json();
+// Validate Firebase configuration
+const validateFirebaseConfig = () => {
+  const requiredKeys = ['apiKey', 'projectId', 'appId'];
+  const missingKeys = requiredKeys.filter(key => !firebaseConfig[key as keyof typeof firebaseConfig]);
 
-    const firebaseConfig = {
-      apiKey: config.apiKey,
-      authDomain: `${config.projectId}.firebaseapp.com`,
-      projectId: config.projectId,
-      storageBucket: `${config.projectId}.appspot.com`,
-      appId: config.appId,
-    };
-
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-  } catch (error) {
-    console.error("Failed to initialize Firebase:", error);
+  if (missingKeys.length > 0) {
+    console.error(`Missing Firebase configuration: ${missingKeys.join(', ')}`);
+    throw new Error(`Firebase initialization failed: Missing ${missingKeys.join(', ')}`);
   }
-}
+};
 
-// Initialize Firebase when this module is imported
-initializeFirebase();
+// Initialize Firebase
+let app;
+let auth;
+
+try {
+  validateFirebaseConfig();
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  console.log('Firebase initialized successfully');
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+  throw error;
+}
 
 export { app, auth };

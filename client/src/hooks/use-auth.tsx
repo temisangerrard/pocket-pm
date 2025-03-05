@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { User as SelectUser } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
   GoogleAuthProvider,
@@ -15,7 +15,7 @@ import {
   getRedirectResult,
   type User as FirebaseUser
 } from "firebase/auth";
-import { auth, initializeFirebase } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -34,44 +34,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
+  // Set up Firebase auth state listener
   useEffect(() => {
-    // Initialize Firebase
-    initializeFirebase().then(() => {
-      setIsInitialized(true);
-    });
+    try {
+      const unsubscribe = onAuthStateChanged(
+        auth, 
+        // Success callback
+        (user) => {
+          setFirebaseUser(user);
+          setIsLoading(false);
+        }, 
+        // Error callback
+        (authError) => {
+          console.error("Firebase auth state error:", authError);
+          setError(authError instanceof Error ? authError : new Error(String(authError)));
+          setIsLoading(false);
+        }
+      );
+
+      // Check for redirect result
+      getRedirectResult(auth)
+        .then((result) => {
+          if (result) {
+            toast({ title: "Successfully signed in with Google" });
+          }
+        })
+        .catch((error) => {
+          handleAuthError(error);
+        });
+
+      return () => unsubscribe();
+    } catch (initError) {
+      console.error("Error setting up auth listener:", initError);
+      setError(initError instanceof Error ? initError : new Error(String(initError)));
+      setIsLoading(false);
+      return () => {}; // Empty cleanup function
+    }
   }, []);
 
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-      setIsLoading(false);
-    });
-
-    // Check for redirect result
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          toast({ title: "Successfully signed in with Google" });
-        }
-      })
-      .catch((error) => {
-        handleAuthError(error);
-      });
-
-    return () => unsubscribe();
-  }, [isInitialized]);
-
+  // Fetch user data when Firebase user changes
   const { data: user } = useQuery<SelectUser | null>({
     queryKey: ["/api/user", firebaseUser?.uid],
-    enabled: !!firebaseUser,
+    enabled: !!firebaseUser && !error,
   });
 
   const handleAuthError = (error: any) => {
     let message = "Authentication failed";
+    
+    // Handle specific Firebase auth error codes
     if (error.code === 'auth/popup-closed-by-user') {
       message = "Sign-in window was closed";
     } else if (error.code === 'auth/popup-blocked') {
@@ -89,6 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       message = "Password should be at least 6 characters";
     } else if (error.code === 'auth/network-request-failed') {
       message = "Network error. Please check your connection";
+    } else if (error.code === 'auth/internal-error') {
+      message = "An internal authentication error occurred";
     }
 
     toast({
@@ -96,40 +110,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       description: message,
       variant: "destructive",
     });
+    
     return false;
   };
 
   const signInWithGoogle = async () => {
-    if (!isInitialized) {
+    if (error) {
       toast({
-        title: "Error",
-        description: "Authentication system is still initializing",
+        title: "Authentication Error",
+        description: "Authentication system is not available",
         variant: "destructive",
       });
       return;
     }
-
+    
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
     } catch (error: any) {
       if (handleAuthError(error)) {
-        const provider = new GoogleAuthProvider();
-        await signInWithRedirect(auth, provider);
+        try {
+          const provider = new GoogleAuthProvider();
+          await signInWithRedirect(auth, provider);
+        } catch (redirectError: any) {
+          handleAuthError(redirectError);
+        }
       }
     }
   };
 
   const signInWithEmail = async (email: string, password: string) => {
-    if (!isInitialized) {
+    if (error) {
       toast({
-        title: "Error",
-        description: "Authentication system is still initializing",
+        title: "Authentication Error",
+        description: "Authentication system is not available",
         variant: "destructive",
       });
       return;
     }
-
+    
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: "Successfully signed in" });
@@ -139,15 +158,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUpWithEmail = async (email: string, password: string, name: string) => {
-    if (!isInitialized) {
+    if (error) {
       toast({
-        title: "Error",
-        description: "Authentication system is still initializing",
+        title: "Authentication Error",
+        description: "Authentication system is not available",
         variant: "destructive",
       });
       return;
     }
-
+    
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
@@ -158,8 +177,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    if (!isInitialized) return;
-
+    if (error) {
+      toast({
+        title: "Authentication Error",
+        description: "Authentication system is not available",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       await signOut(auth);
       queryClient.clear();
@@ -178,8 +204,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         firebaseUser,
-        isLoading: isLoading || !isInitialized,
-        error: null,
+        isLoading,
+        error,
         signInWithGoogle,
         signInWithEmail,
         signUpWithEmail,
