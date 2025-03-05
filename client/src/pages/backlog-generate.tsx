@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Prd } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft, ListChecks, FileText } from "lucide-react";
 
 export default function BacklogGenerate() {
   // Get PRD ID from URL query parameters
@@ -47,7 +47,10 @@ export default function BacklogGenerate() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/features"] });
-      toast({ title: "Backlog items generated successfully" });
+      toast({ 
+        title: "Backlog items generated successfully",
+        description: "View and prioritize your new features in the backlog."
+      });
       setLocation("/features");
     },
     onError: (error: Error) => {
@@ -68,7 +71,14 @@ export default function BacklogGenerate() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Generate Product Backlog</h1>
+        <div className="flex items-center gap-4 mb-6">
+          <Link href="/prds">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold">Generate Product Backlog</h1>
+        </div>
 
         <div className="space-y-6">
           <Card>
@@ -144,6 +154,21 @@ export default function BacklogGenerate() {
               </Button>
             </CardContent>
           </Card>
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link href="/prds" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full">
+                <FileText className="mr-2 h-4 w-4" />
+                Back to PRDs
+              </Button>
+            </Link>
+            <Link href="/features" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full">
+                <ListChecks className="mr-2 h-4 w-4" />
+                View Backlog
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

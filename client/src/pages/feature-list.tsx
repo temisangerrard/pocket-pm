@@ -11,7 +11,8 @@ import CsvImport from "@/components/csv-import";
 import PriorityChart from "@/components/priority-chart";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowUpDown, Plus, Trash2 } from "lucide-react";
+import { ArrowUpDown, Plus, Trash2, FileText, ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
 
 const priorityColors = {
   must: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
@@ -58,7 +59,6 @@ export default function FeatureList() {
     return <div className="p-8"><Skeleton className="h-[400px] w-full" /></div>;
   }
 
-  // Group features by priority
   const groupedFeatures = features?.reduce((acc, feature) => {
     const priority = feature.priority || 'should';
     if (!acc[priority]) acc[priority] = [];
@@ -68,12 +68,19 @@ export default function FeatureList() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Feature Backlog</h1>
-        <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <Link href="/prds">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <h1 className="text-3xl font-bold">Feature Backlog</h1>
+        </div>
+        <div className="flex gap-4 w-full sm:w-auto">
           <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Feature
               </Button>
@@ -83,6 +90,12 @@ export default function FeatureList() {
             </DialogContent>
           </Dialog>
           <CsvImport />
+          <Link href="/backlog/generate">
+            <Button variant="outline" className="w-full sm:w-auto">
+              <FileText className="mr-2 h-4 w-4" />
+              New Backlog
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -97,8 +110,8 @@ export default function FeatureList() {
           <CardContent className="pt-6">
             <h3 className="text-lg font-semibold mb-4">Sprint Planning Suggestions</h3>
             <p className="text-muted-foreground">
-              Based on RICE scores and MoSCoW prioritization, consider including 
-              Must-have features and top {Math.min(3, features?.length || 0)} Should-have 
+              Based on RICE scores and MoSCoW prioritization, consider including
+              Must-have features and top {Math.min(3, features?.length || 0)} Should-have
               features in your next sprint.
             </p>
           </CardContent>
