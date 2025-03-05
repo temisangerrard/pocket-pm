@@ -4,7 +4,6 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { SiGoogle } from "react-icons/si";
 
 export default function AuthPage() {
@@ -14,18 +13,10 @@ export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const [_, setLocation] = useLocation();
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!email || !password) return;
 
     setLoading(true);
     try {
@@ -35,19 +26,8 @@ export default function AuthPage() {
         await signInWithEmail(email, password);
       }
       setLocation("/");
-    } catch (error) {
-      // Error is handled in the auth hook
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle();
-      setLocation("/");
-    } catch (error) {
-      // Error is handled in the auth hook
     }
   };
 
@@ -60,7 +40,7 @@ export default function AuthPage() {
 
         <Button
           variant="outline"
-          onClick={handleGoogleSignIn}
+          onClick={signInWithGoogle}
           className="w-full mb-6"
           disabled={loading}
         >
@@ -80,24 +60,20 @@ export default function AuthPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-          <div>
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-            />
-          </div>
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+          />
           <Button type="submit" className="w-full" disabled={loading}>
             {isSignUp ? "Create Account" : "Sign In"}
           </Button>

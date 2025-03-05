@@ -1,18 +1,18 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
 import {
-  GoogleAuthProvider,
   signInWithPopup,
+  GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  User as FirebaseUser,
+  User,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
-  user: FirebaseUser | null;
+  user: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
@@ -23,7 +23,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signInWithPopup(auth, provider);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Google Sign In Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Sign In Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Sign Up Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signOut(auth);
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Sign Out Failed",
         description: error.message,
         variant: "destructive",
       });
