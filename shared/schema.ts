@@ -34,17 +34,15 @@ export const insertFeatureSchema = createInsertSchema(features)
     priority: z.enum(['must', 'should', 'could', 'wont']).default('should'),
   });
 
-export const insertPrdSchema = createInsertSchema(prds, {
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
-  sections: z.array(z.object({
-    title: z.string(),
-    content: z.string(),
-    order: z.number(),
-  })),
-});
+export const insertPrdSchema = createInsertSchema(prds)
+  .omit({ id: true, createdAt: true, updatedAt: true })
+  .extend({
+    sections: z.array(z.object({
+      title: z.string(),
+      content: z.string(),
+      order: z.number(),
+    })),
+  });
 
 export type InsertFeature = z.infer<typeof insertFeatureSchema>;
 export type Feature = typeof features.$inferSelect;

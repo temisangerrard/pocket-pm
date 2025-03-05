@@ -64,7 +64,7 @@ Example format:
     }
 
     // Log the raw response for debugging
-    console.log("OpenAI API Response:", response.choices[0].message.content);
+    console.log('OpenAI API Response:', response.choices[0].message.content);
 
     const result = JSON.parse(response.choices[0].message.content);
     if (!result.features || !Array.isArray(result.features)) {
