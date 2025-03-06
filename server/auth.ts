@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import rateLimit from "express-rate-limit";
 
 declare global {
   namespace Express {
@@ -28,9 +29,20 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+// Rate limiter for login attempts
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login attempts per window
+  message: { error: "Too many login attempts, please try again later" }
+});
+
 export function setupAuth(app: Express) {
+  if (!process.env.SESSION_SECRET) {
+    throw new Error('SESSION_SECRET environment variable is required');
+  }
+
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || throw new Error('SESSION_SECRET is required'),
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -53,9 +65,15 @@ export function setupAuth(app: Express) {
     new LocalStrategy(async (username, password, done) => {
       try {
         const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        if (!user) {
           return done(null, false, { message: "Invalid username or password" });
         }
+
+        const isValid = await comparePasswords(password, user.password);
+        if (!isValid) {
+          return done(null, false, { message: "Invalid username or password" });
+        }
+
         return done(null, user);
       } catch (error) {
         return done(error);
@@ -67,6 +85,9 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
+      if (!user) {
+        return done(new Error('User not found'));
+      }
       done(null, user);
     } catch (error) {
       done(error);
@@ -90,30 +111,43 @@ export function setupAuth(app: Express) {
         if (err) {
           return res.status(500).json({ error: "Login failed after registration" });
         }
-        res.status(201).json(user);
+        // Don't send password hash back to client
+        const { password, ...safeUser } = user;
+        res.status(201).json(safeUser);
       });
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/login", loginLimiter, (req, res, next) => {
     passport.authenticate("local", (err, user, info) => {
-      if (err) return next(err);
+      if (err) {
+        return next(err);
+      }
       if (!user) {
-        return res.status(401).json({ error: info.message || "Authentication failed" });
+        return res.status(401).json({ error: info?.message || "Authentication failed" });
       }
       req.login(user, (err) => {
-        if (err) return next(err);
-        res.json(user);
+        if (err) {
+          return next(err);
+        }
+        // Don't send password hash back to client
+        const { password, ...safeUser } = user;
+        res.json(safeUser);
       });
     })(req, res, next);
   });
 
   app.post("/api/logout", (req, res, next) => {
+    const sessionId = req.sessionID;
     req.logout((err) => {
       if (err) return next(err);
-      res.sendStatus(200);
+      req.session.destroy((err) => {
+        if (err) return next(err);
+        res.clearCookie('sessionId');
+        res.sendStatus(200);
+      });
     });
   });
 
@@ -121,6 +155,8 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    res.json(req.user);
+    // Don't send password hash back to client
+    const { password, ...safeUser } = req.user;
+    res.json(safeUser);
   });
 }
